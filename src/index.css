@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  
+  --color-synk-offwhite: #FDFCFB;
+  --color-synk-navy: #334155;
+  --color-synk-grey: #94A3B8;
+  --color-synk-blue: #DBEAFE;
+  --color-synk-cyan: #D1FAE5;
+  --color-synk-pink: #FCE7F3;
+  --color-synk-lavender: #EDE9FE;
+  --color-synk-peach: #FFEDD5;
+}
+
+@layer base {
+  body {
+    @apply bg-synk-offwhite text-synk-navy font-sans antialiased overflow-hidden select-none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.accessible-button {
+  @apply active:scale-95 transition-transform;
+}
+

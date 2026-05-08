@@ -1,0 +1,6 @@
+{
+  "name": "SYNK.",
+  "description": "AI fashion and beauty assistant for the visually impaired, translating visual signals into voice and touch.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
