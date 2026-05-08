@@ -61,19 +61,27 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate }) => {
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+        
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: [
             {
-              parts: [
-                { text: '이 이미지는 패션이나 뷰티 제품입니다. 시각장애인 사용자를 위해 아주 상세하게 설명해주세요. 소재의 질감(거친지 부드러운지), 색상, 패턴, 스타일, 그리고 이 제품이 사용자의 체형(준비된 데이터 기준)에 어울릴지 간단히 언급해주세요. 한국어로 응답하세요.' },
-                { inlineData: { mimeType: 'image/jpeg', data: imageData.split(',')[1] } }
-              ]
+              text: `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
+              시각장애인 사용자를 위해 아주 상세하고 감성적으로 설명해주세요.
+              색상이 실제와 정확하지 않아도 되니, 그 색상이 주는 '느낌'과 'TPO(상황)'를 연결해서 설명해주세요.
+              예를 들어 "신뢰감을 주는 레드입니다. 이 색상은 면접이나 자신을 돋보여야 하는 자리에서 침착하고 열정적인 모습을 보여줄 수 있을 것 같습니다."와 같은 문장을 포함하세요.
+              소재의 질감과 스타일도 함께 설명해주세요. 한국어로 따뜻하고 신뢰감 있게 대답하세요.`
+            },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageData.split(',')[1]
+              }
             }
           ]
         });
 
-        const analysisText = response.text;
+        const analysisText = response.text || '';
         setResult(analysisText);
         speechService.speak(analysisText);
         hapticService.success();

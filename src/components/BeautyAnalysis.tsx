@@ -59,23 +59,27 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate }) =>
       
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+        
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: [
             {
-              parts: [
-                { text: `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
-                  1. 메이크업의 대칭성 (아이라인 길이 차이, 눈썹 높이 차이 등)을 mm 단위로 추정하여 설명하세요.
-                  2. 현재 얼굴에서 강조된 부분과 보완하면 좋을 부분을 설명하세요.
-                  3. 시각장애인 사용자를 위해 구체적인 위치 가이드 (예: 왼쪽 눈썹 2mm 아래부터 시작하세요)를 제공하세요.
-                  구체적이고 친절한 한국어로 응답하세요.` },
-                { inlineData: { mimeType: 'image/jpeg', data: imageData.split(',')[1] } }
-              ]
+              text: `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
+              1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적으로 설명해주세요.
+              2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 설명하세요.
+              3. 전체적인 분위기가 주는 신뢰감이나 느낌을 감성적으로 묘사하세요. 
+              한국어로 친절하게 안내하세요.`
+            },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: imageData.split(',')[1]
+              }
             }
           ]
         });
 
-        const analysisText = response.text;
+        const analysisText = response.text || '';
         setResult(analysisText);
         speechService.speak(analysisText);
         hapticService.success();

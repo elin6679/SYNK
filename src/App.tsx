@@ -6,6 +6,7 @@ import { Analysis } from './components/Analysis';
 import { BeautyAnalysis } from './components/BeautyAnalysis';
 import { Closet } from './components/Closet';
 import { Settings } from './components/Settings';
+import { StoreMode } from './components/StoreMode';
 import { motion, AnimatePresence } from 'motion/react';
 import { speechService } from './lib/speech';
 
@@ -66,8 +67,11 @@ export default function App() {
           {currentScreen === AppScreen.SETTINGS && (
             <Settings onNavigate={navigateTo} profile={profile} />
           )}
+          {currentScreen === AppScreen.STORE && (
+            <StoreMode onNavigate={navigateTo} />
+          )}
           {/* Placeholder for other screens */}
-          {[AppScreen.STORE].includes(currentScreen) && (
+          {![AppScreen.ONBOARDING, AppScreen.HOME, AppScreen.ANALYSIS, AppScreen.BEAUTY, AppScreen.CLOSET, AppScreen.SETTINGS, AppScreen.STORE].includes(currentScreen) && (
             <div className="h-full flex flex-col items-center justify-center p-12 text-center gap-8">
               <h1 className="text-4xl font-bold">{currentScreen} 기능은 준비 중입니다.</h1>
               <AccessibleButton 

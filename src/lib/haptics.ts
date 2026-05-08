@@ -18,7 +18,11 @@ type HapticPatternKey = keyof HapticPatternType;
 class HapticService {
   vibrate(pattern: number | number[] | readonly number[]) {
     if (typeof window !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(pattern as VibratePattern);
+      try {
+        navigator.vibrate(pattern as any);
+      } catch (e) {
+        console.warn('Haptics not supported or blocked:', e);
+      }
     }
   }
 
