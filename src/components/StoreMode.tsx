@@ -59,7 +59,7 @@ export const StoreMode: React.FC<StoreModeProps> = ({ onNavigate }) => {
       <div className="absolute top-6 left-6 right-6 z-10 flex justify-between">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30"
+          className="p-5 rounded-full bg-white/50 backdrop-blur-md text-synk-navy border border-synk-navy/10"
         >
           <X className="w-10 h-10" />
         </button>
@@ -73,15 +73,15 @@ export const StoreMode: React.FC<StoreModeProps> = ({ onNavigate }) => {
           className="w-full h-full object-cover opacity-60"
         />
         
-        {/* QR Scanner Frame */}
-        <div className="absolute w-72 h-72 border-4 border-synk-cyan rounded-3xl flex items-center justify-center">
-          <div className="w-full h-1 bg-synk-cyan absolute top-1/2 animate-bounce opacity-50" />
-          <Zap className="w-12 h-12 text-synk-cyan animate-pulse" />
+        {/* QR Scanner Frame - Updated with pastel blue */}
+        <div className="absolute w-72 h-72 border-4 border-synk-blue rounded-3xl flex items-center justify-center">
+          <div className="w-full h-1 bg-synk-blue absolute top-1/2 animate-bounce opacity-50" />
+          <Zap className="w-12 h-12 text-synk-blue animate-pulse" />
         </div>
 
         {isScanning && (
-          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white gap-6">
-            <RefreshCw className="w-20 h-20 animate-spin text-synk-cyan" />
+          <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center text-synk-navy gap-6">
+            <RefreshCw className="w-20 h-20 animate-spin text-synk-blue" />
             <p className="text-2xl font-bold">코드 해독 중...</p>
           </div>
         )}

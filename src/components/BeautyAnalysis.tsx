@@ -2,16 +2,17 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { speechService } from '../lib/speech';
 import { hapticService } from '../lib/haptics';
-import { AppScreen } from '../types';
+import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { Sparkles, X, RefreshCw, User, CheckCircle2 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 interface BeautyAnalysisProps {
   onNavigate: (screen: AppScreen) => void;
+  profile: UserProfile | null;
 }
 
-export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate }) => {
+export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, profile }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -60,26 +61,35 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate }) =>
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
         
+        const isDetailed = profile?.settings.detailMode === 'detailed';
+        const prompt = isDetailed
+          ? `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
+             1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적이고 풍부하게 설명해주세요.
+             2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 상세하게 설명하세요.
+             3. 전체적인 분위기가 주는 신뢰감이나 느낌을 아주 감성적으로 묘사하세요. 
+             5문장 이상의 긴 설명으로 친절하게 안내하세요. 한국어로 상세하게 답변하세요.`
+          : `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요. 
+             전체적인 대칭성과 가장 중요한 보완점 딱 한 가지만 2문장으로 아주 짧고 명확하게 설명해주세요. 
+             예: "오른쪽 눈썹이 왼쪽보다 약간 높게 그려졌습니다. 전체적으로 깔끔하고 신뢰감을 주는 분위기입니다."와 같이 핵심만 말하세요.`;
+        
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
-          contents: [
-            {
-              text: `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
-              1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적으로 설명해주세요.
-              2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 설명하세요.
-              3. 전체적인 분위기가 주는 신뢰감이나 느낌을 감성적으로 묘사하세요. 
-              한국어로 친절하게 안내하세요.`
-            },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: imageData.split(',')[1]
+          contents: {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: imageData.split(',')[1]
+                }
               }
-            }
-          ]
+            ]
+          }
         });
 
-        const analysisText = response.text || '';
+        const analysisText = response.response?.text() || response.text || '';
+        if (!analysisText) throw new Error('Empty analysis result');
+
         setResult(analysisText);
         speechService.speak(analysisText);
         hapticService.success();

@@ -11,9 +11,10 @@ import { collection, addDoc } from 'firebase/firestore';
 
 interface AnalysisProps {
   onNavigate: (screen: AppScreen) => void;
+  profile: UserProfile | null;
 }
 
-export const Analysis: React.FC<AnalysisProps> = ({ onNavigate }) => {
+export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -62,26 +63,34 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate }) => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
         
+        const isDetailed = profile?.settings.detailMode === 'detailed';
+        const prompt = isDetailed 
+          ? `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
+             시각장애인 사용자를 위해 아주 상세하고 구체적으로, 감성적인 묘사를 곁들여서 설명해주세요.
+             색상이 실제와 정확하지 않아도 되니, 그 색상이 주는 '느낌'과 '상황(TPO)'을 연결해서 아주 풍부하게 설명해주세요.
+             예를 들어 "신뢰감을 주는 레드입니다. 이 색상은 중요한 면접이나 자신을 돋보여야 하는 자리에서 침착하면서도 열정적인 존재감을 보여줄 수 있을 것 같습니다. 소재는 부드러운 실크 느낌이며, 전체적으로 우아한 분위기를 풍깁니다."와 같이 아주 길고 자세하게 설명하세요.
+             질감, 스타일, 어울리는 장소 등을 모두 포함해 5문장 이상의 긴 설명을 제공하세요. 한국어로 따뜻하고 상세하게 대답하세요.`
+          : `이 이미지는 사용자가 입으려는 옷입니다. 시각장애인 사용자를 위해 핵심적인 종류와 색상만 딱 2문장으로 아주 짧게 명확하게 설명해주세요. 
+             예: "신뢰감을 주는 레드 셔츠입니다. 면접과 같은 중요한 자리에 잘 어울리는 스타일입니다."와 같이 핵심만 말하세요.`;
+
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
-          contents: [
-            {
-              text: `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
-              시각장애인 사용자를 위해 아주 상세하고 감성적으로 설명해주세요.
-              색상이 실제와 정확하지 않아도 되니, 그 색상이 주는 '느낌'과 'TPO(상황)'를 연결해서 설명해주세요.
-              예를 들어 "신뢰감을 주는 레드입니다. 이 색상은 면접이나 자신을 돋보여야 하는 자리에서 침착하고 열정적인 모습을 보여줄 수 있을 것 같습니다."와 같은 문장을 포함하세요.
-              소재의 질감과 스타일도 함께 설명해주세요. 한국어로 따뜻하고 신뢰감 있게 대답하세요.`
-            },
-            {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: imageData.split(',')[1]
+          contents: {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: imageData.split(',')[1]
+                }
               }
-            }
-          ]
+            ]
+          }
         });
 
-        const analysisText = response.text || '';
+        const analysisText = response.response?.text() || response.text || '';
+        if (!analysisText) throw new Error('Empty analysis result');
+
         setResult(analysisText);
         speechService.speak(analysisText);
         hapticService.success();

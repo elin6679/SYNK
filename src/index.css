@@ -1,18 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Outfit", sans-serif;
+  --font-sans: "Quicksand", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Quicksand", sans-serif;
   
-  --color-synk-offwhite: #FDFCFB;
-  --color-synk-navy: #334155;
+  --color-synk-offwhite: #FFF5F7; /* Soft Pastel Pinkish White */
+  --color-synk-navy: #475569;
   --color-synk-grey: #94A3B8;
-  --color-synk-blue: #DBEAFE;
-  --color-synk-cyan: #D1FAE5;
-  --color-synk-pink: #FCE7F3;
-  --color-synk-lavender: #EDE9FE;
-  --color-synk-peach: #FFEDD5;
+  --color-synk-blue: #E0F2FE; /* Pastel Blue */
+  --color-synk-cyan: #ECFDF5;
+  --color-synk-pink: #FCE7F3; /* Soft Pink */
+  --color-synk-lavender: #F3E8FF; /* Soft Lavender */
+  --color-synk-peach: #FFF7ED; /* Soft Peach */
 }
 
 @layer base {
@@ -23,6 +23,10 @@
 }
 
 .accessible-button {
-  @apply active:scale-95 transition-transform;
+  @apply active:scale-95 transition-all duration-300 rounded-[32px] border-b-4 border-black/5;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 0px;
 }
 

@@ -31,7 +31,7 @@ class SpeechService {
     this.settings.volume = volume;
   }
 
-  speak(text: string, interrupt = true) {
+  speak(text: string, interrupt = true, onEnd?: () => void) {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
     if (interrupt && window.speechSynthesis.speaking) {
@@ -44,6 +44,10 @@ class SpeechService {
     utterance.pitch = this.settings.pitch;
     utterance.volume = this.settings.volume;
     utterance.lang = 'ko-KR';
+
+    if (onEnd) {
+      utterance.onend = onEnd;
+    }
 
     this.lastUtterance = utterance;
     window.speechSynthesis.speak(utterance);

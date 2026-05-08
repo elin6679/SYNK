@@ -10,6 +10,7 @@ export interface UserProfile {
     speechRate: number;
     speechVolume: number;
     hapticIntensity: number;
+    detailMode: 'simple' | 'detailed';
   };
 }
 

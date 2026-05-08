@@ -65,6 +65,7 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
       id={id}
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
+      onFocus={() => speechService.speak(`${label}${hint ? `. ${hint}` : ''}`)}
       onContextMenu={(e) => e.preventDefault()}
       className={`
         relative w-full py-8 px-6 rounded-3xl flex flex-col items-center justify-center gap-4

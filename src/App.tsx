@@ -40,8 +40,9 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-full max-w-md mx-auto bg-synk-offwhite shadow-2xl relative overflow-hidden">
-      <AnimatePresence mode="wait">
+    <div className="h-screen w-full bg-synk-offwhite font-sans text-synk-navy selection:bg-synk-pink/30">
+      <div className="max-w-md mx-auto h-full bg-synk-offwhite shadow-2xl relative overflow-hidden">
+        <AnimatePresence mode="wait">
         <motion.div
           key={currentScreen}
           initial={{ opacity: 0, x: 20 }}
@@ -56,10 +57,10 @@ export default function App() {
             <Home onNavigate={navigateTo} />
           )}
           {currentScreen === AppScreen.ANALYSIS && (
-            <Analysis onNavigate={navigateTo} />
+            <Analysis onNavigate={navigateTo} profile={profile} />
           )}
           {currentScreen === AppScreen.BEAUTY && (
-            <BeautyAnalysis onNavigate={navigateTo} />
+            <BeautyAnalysis onNavigate={navigateTo} profile={profile} />
           )}
           {currentScreen === AppScreen.CLOSET && (
             <Closet onNavigate={navigateTo} />
@@ -82,6 +83,7 @@ export default function App() {
           )}
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 }

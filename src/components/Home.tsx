@@ -22,15 +22,18 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   }, []);
 
   return (
-    <div className="h-full flex flex-col p-6 pb-24 overflow-y-auto custom-scrollbar">
-      <header className="py-8 flex justify-between items-center text-synk-navy">
-        <h1 className="text-4xl font-display font-black tracking-tighter">SYNK.</h1>
+    <div className="h-full flex flex-col p-6 pb-24 overflow-y-auto custom-scrollbar bg-synk-offwhite">
+      <header className="py-10 flex justify-between items-center text-synk-navy">
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-display font-black tracking-tight">SYNK.</h1>
+          <span className="text-sm opacity-60 font-medium">부드러운 감각의 연결</span>
+        </div>
         <button 
           onClick={() => onNavigate(AppScreen.SETTINGS)}
-          className="p-4 rounded-full bg-white/50 backdrop-blur-md shadow-sm active:scale-90 transition-transform border border-white/50"
+          className="p-5 rounded-3xl bg-white shadow-xl shadow-synk-pink/20 active:scale-90 transition-all border border-white"
           aria-label="설정"
         >
-          <Settings className="w-8 h-8" />
+          <Settings className="w-8 h-8 text-synk-grey" />
         </button>
       </header>
 
