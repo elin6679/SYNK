@@ -146,15 +146,15 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
             <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">신체 데이터</h2>
           </div>
           
-          <div className="bg-synk-offwhite p-6 rounded-[2.5rem] border-2 border-synk-navy/5 space-y-6">
+          <div className="bg-synk-offwhite p-5 rounded-[2rem] border-2 border-synk-navy/5 space-y-4">
             {[
               { key: 'height', label: '키' },
               { key: 'shoulder', label: '어깨너비' },
               { key: 'chest', label: '가슴둘레' },
               { key: 'waist', label: '허리둘레' }
             ].map(m => (
-              <div key={m.key} className="space-y-3">
-                <label className="text-sm font-black text-synk-grey uppercase px-2">{m.label}</label>
+              <div key={m.key} className="space-y-2">
+                <label className="text-[11px] font-black text-synk-grey uppercase px-2">{m.label} (CM)</label>
                 <div className="flex items-center">
                   <input
                     type="number"
@@ -167,7 +167,7 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
                       onUpdateProfile(newProfile);
                     }}
                     onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0} 센티미터입니다.`)}
-                    className="flex-1 bg-white h-12 rounded-2xl text-center font-black text-xl shadow-inner border-2 border-synk-navy/5 outline-none focus:border-synk-blue/30 transition-colors"
+                    className="w-full bg-white h-11 rounded-xl text-center font-black text-lg shadow-inner border-2 border-synk-navy/5 outline-none focus:border-synk-blue/30 transition-colors"
                   />
                 </div>
               </div>

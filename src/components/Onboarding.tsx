@@ -279,19 +279,19 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         )}
 
         {step.id === 'measurements' && (
-          <div className="bg-white p-6 rounded-[3rem] shadow-2xl space-y-8 border-t-8 border-synk-blue/20">
+          <div className="bg-white p-5 rounded-[2.5rem] shadow-2xl space-y-5 border-t-8 border-synk-blue/20 w-full max-w-sm">
             {[
               { key: 'height', label: '나의 키' },
               { key: 'shoulder', label: '어깨너비' },
               { key: 'chest', label: '가슴둘레' },
               { key: 'waist', label: '허리둘레' }
             ].map((m) => (
-              <div key={m.key} className="flex flex-col gap-4">
-                <label className="text-xl font-bold text-synk-navy ml-2 flex items-center justify-between">
+              <div key={m.key} className="flex flex-col gap-2">
+                <label className="text-lg font-bold text-synk-navy ml-2 flex items-center justify-between">
                   {m.label}
-                  <span className="text-sm font-black opacity-30 uppercase tracking-widest">centimeters</span>
+                  <span className="text-[10px] font-black opacity-30 uppercase tracking-widest">cm</span>
                 </label>
-                <div className="flex items-center">
+                <div className="flex items-center w-full">
                   <input
                     type="number"
                     min="0"
@@ -304,7 +304,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }));
                     }}
                     onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${profile.measurements[m.key as keyof typeof profile.measurements] || 0} 센티미터입니다.`)}
-                    className="flex-1 h-16 bg-synk-offwhite rounded-3xl text-center text-3xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
+                    className="w-full h-14 bg-synk-offwhite rounded-2xl text-center text-2xl font-black border-2 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
                     placeholder="0"
                   />
                 </div>
