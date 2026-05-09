@@ -10,24 +10,32 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const app = express();
+
 async function startServer() {
-  const app = express();
   const PORT = 3000;
 
   // Middleware for parsing JSON with a larger limit for images
   app.use(express.json({ limit: '10mb' }));
 
   // API Routes
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", apiKey: !!process.env.GEMINI_API_KEY });
+  });
+
   app.post("/api/analyze", async (req, res) => {
+    console.log("Analyze request received");
     try {
       const { image, prompt } = req.body;
       if (!image || !prompt) {
+        console.error("Missing image or prompt");
         return res.status(400).json({ error: "Missing image or prompt" });
       }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server" });
+        console.error("GEMINI_API_KEY missing");
+        return res.status(500).json({ error: "GEMINI_API_KEY가 서버에 설정되지 않았습니다. 환경 변수를 확인해주세요." });
       }
 
       const genAI = new GoogleGenAI(apiKey);
@@ -47,7 +55,8 @@ async function startServer() {
       res.json({ result: text });
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      res.status(500).json({ error: "Internal Server Error during analysis" });
+      const msg = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: `AI 분석 중 서버 오류 발생: ${msg}` });
     }
   });
 
@@ -66,9 +75,14 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  // Only listen if not in a serverless environment (Vercel)
+  if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;

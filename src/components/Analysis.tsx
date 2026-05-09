@@ -91,7 +91,8 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
         hapticService.success();
       } catch (err) {
         console.error(err);
-        speechService.speak('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+        const errorMessage = err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.';
+        speechService.speak(errorMessage + ' 다시 시도해주세요.');
       } finally {
         setIsAnalyzing(false);
       }
