@@ -4,6 +4,7 @@ import { db, auth, OperationType, handleFirestoreError } from '../lib/firebase';
 import { ClothingItem, AppScreen } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { speechService } from '../lib/speech';
+import { hapticService } from '../lib/haptics';
 import { Shirt, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 

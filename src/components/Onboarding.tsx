@@ -27,6 +27,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [voiceLoginStep, setVoiceLoginStep] = useState<'email' | 'password' | 'done'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isDetailModeSet, setIsDetailModeSet] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     name: '사용자',
     measurements: {},
@@ -37,6 +38,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       detailMode: 'detailed',
     }
   });
+
+  const isMeasurementsSet = Object.values(profile.measurements).some(v => typeof v === 'number' && v > 0);
 
   useEffect(() => {
     const step = STEPS[currentStep];
@@ -250,6 +253,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               className={profile.settings.detailMode === 'simple' ? '' : 'text-synk-navy border-synk-navy/5 bg-synk-offwhite'}
               onClick={() => {
                 setProfile(prev => ({ ...prev, settings: { ...prev.settings, detailMode: 'simple' } }));
+                setIsDetailModeSet(true);
                 speechService.speak('간단 모드가 선택되었습니다.');
               }}
             />
@@ -259,6 +263,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               className={profile.settings.detailMode === 'detailed' ? '' : 'text-synk-navy border-synk-navy/5 bg-synk-offwhite'}
               onClick={() => {
                 setProfile(prev => ({ ...prev, settings: { ...prev.settings, detailMode: 'detailed' } }));
+                setIsDetailModeSet(true);
                 speechService.speak('상세 모드가 선택되었습니다.');
               }}
             />
@@ -278,52 +283,30 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             {[
               { key: 'height', label: '나의 키' },
               { key: 'shoulder', label: '어깨너비' },
-              { key: 'chest', label: '가슴둘레' }
+              { key: 'chest', label: '가슴둘레' },
+              { key: 'waist', label: '허리둘레' }
             ].map((m) => (
               <div key={m.key} className="flex flex-col gap-4">
                 <label className="text-xl font-bold text-synk-navy ml-2 flex items-center justify-between">
                   {m.label}
                   <span className="text-sm font-black opacity-30 uppercase tracking-widest">centimeters</span>
                 </label>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      const currentVal = profile.measurements[m.key as keyof typeof profile.measurements] || 0;
-                      const newVal = Math.max(0, currentVal - 1);
-                      setProfile(prev => ({
-                        ...prev,
-                        measurements: { ...prev.measurements, [m.key]: newVal }
-                      }));
-                      speechService.speak(`${m.label} ${newVal} 센티미터`);
-                    }}
-                    className="w-18 h-18 rounded-[2rem] bg-synk-blue text-white flex items-center justify-center text-4xl font-black active:scale-90 shadow-xl shadow-synk-blue/20"
-                  > <Minus className="w-8 h-8" /> </button>
+                <div className="flex items-center">
                   <input
                     type="number"
+                    min="0"
                     value={profile.measurements[m.key as keyof typeof profile.measurements] || ''}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0;
+                      const val = Math.max(0, parseInt(e.target.value) || 0);
                       setProfile(prev => ({
                         ...prev,
                         measurements: { ...prev.measurements, [m.key]: val }
                       }));
                     }}
                     onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${profile.measurements[m.key as keyof typeof profile.measurements] || 0} 센티미터입니다.`)}
-                    className="flex-1 h-18 bg-synk-offwhite rounded-[2rem] text-center text-3xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
+                    className="flex-1 h-20 bg-synk-offwhite rounded-[2rem] text-center text-4xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
                     placeholder="0"
                   />
-                  <button
-                    onClick={() => {
-                      const currentVal = profile.measurements[m.key as keyof typeof profile.measurements] || 0;
-                      const newVal = currentVal + 1;
-                      setProfile(prev => ({
-                        ...prev,
-                        measurements: { ...prev.measurements, [m.key]: newVal }
-                      }));
-                      speechService.speak(`${m.label} ${newVal} 센티미터`);
-                    }}
-                    className="w-18 h-18 rounded-[2rem] bg-white text-synk-navy flex items-center justify-center text-4xl font-black active:scale-95 shadow-xl shadow-black/5 border-2 border-synk-navy/5"
-                  > <Plus className="w-8 h-8" /> </button>
                 </div>
               </div>
             ))}
@@ -347,9 +330,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               )}
               <button
                 onClick={handleNext}
-                className="bg-gradient-to-r from-synk-blue to-synk-cyan text-white px-8 py-4 rounded-full font-black text-xl shadow-xl shadow-synk-blue/20 flex items-center gap-2 active:scale-95 transition-all"
+                className="bg-gradient-to-r from-synk-blue to-synk-cyan text-white px-8 py-4 rounded-full font-black text-xl shadow-xl shadow-synk-blue/20 flex items-center gap-2 active:scale-95 transition-all min-w-[160px] justify-center"
               >
-                {currentStep === STEPS.length - 1 ? '시작하기' : '다음'}
+                {currentStep === STEPS.length - 1 
+                  ? '시작하기' 
+                  : (step.id === 'description_mode' && !isDetailModeSet) || (step.id === 'measurements' && !isMeasurementsSet)
+                    ? '나중에 설정하기'
+                    : '다음'
+                }
                 <ChevronRight className="w-6 h-6" />
               </button>
             </div>

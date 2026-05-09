@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { speechService } from '../lib/speech';
 import { hapticService } from '../lib/haptics';
-import { AppScreen } from '../types';
+import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { Camera, X, RefreshCw, Info, Save } from 'lucide-react';
 import { db, auth, OperationType, handleFirestoreError } from '../lib/firebase';

@@ -38,15 +38,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </button>
         </header>
 
-        {/* Status Card - Reference inspired */}
+        {/* Status Card - Welcoming message */}
         <div className="mb-10 bg-synk-blue rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-synk-blue/20">
           <div className="relative z-10">
             <h2 className="text-lg font-bold opacity-70 mb-1">반가워요!</h2>
-            <p className="text-3xl font-black mb-6 leading-tight">오늘의 분석 횟수는<br/>12회 입니다.</p>
+            <p className="text-3xl font-black mb-6 leading-tight">오늘 당신만의<br/>스타일을 찾아보세요.</p>
             
             <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2 inline-flex">
-              <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse shadow-[0_0_10px_white]" />
-              <span className="text-xs font-bold uppercase tracking-wider">Engine Active</span>
+              <div className="w-2.5 h-2.5 bg-white rounded-full shadow-[0_0_10px_white]" />
+              <span className="text-xs font-bold uppercase tracking-wider">SYNK AI READY</span>
             </div>
           </div>
           

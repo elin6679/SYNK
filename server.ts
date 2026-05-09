@@ -36,20 +36,24 @@ async function startServer() {
         return res.status(500).json({ error: "GEMINI_API_KEY가 설정되지 않았습니다." });
       }
 
-      const genAI = new GoogleGenAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: image
-          }
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: image
+              }
+            }
+          ]
         }
-      ]);
+      });
 
-      const text = result.response.text();
+      const text = response.text;
       res.json({ result: text });
     } catch (error) {
       console.error("AI Analysis Error:", error);

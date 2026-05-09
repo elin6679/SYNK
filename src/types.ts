@@ -4,6 +4,7 @@ export interface UserProfile {
     height?: number;
     shoulder?: number;
     chest?: number;
+    waist?: number;
   };
   skinTone?: string;
   settings: {

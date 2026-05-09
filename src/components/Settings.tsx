@@ -149,36 +149,26 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
           <div className="bg-synk-offwhite p-6 rounded-[2.5rem] border-2 border-synk-navy/5 space-y-6">
             {[
               { key: 'height', label: '키' },
-              { key: 'shoulder', label: '어깨너비' }
+              { key: 'shoulder', label: '어깨너비' },
+              { key: 'chest', label: '가슴둘레' },
+              { key: 'waist', label: '허리둘레' }
             ].map(m => (
               <div key={m.key} className="space-y-3">
                 <label className="text-sm font-black text-synk-grey uppercase px-2">{m.label}</label>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => {
-                      const val = (localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0) - 1;
-                      const newProfile = { ...localProfile, measurements: { ...localProfile.measurements, [m.key]: Math.max(0, val) } };
-                      setLocalProfile(newProfile);
-                      onUpdateProfile(newProfile);
-                    }}
-                    className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-synk-blue active:scale-90 transition-transform"
-                  >
-                    <Minus className="w-6 h-6" />
-                  </button>
-                  <div className="flex-1 bg-white h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">
-                    {localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0} cm
-                  </div>
-                  <button 
-                    onClick={() => {
-                      const val = (localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0) + 1;
+                <div className="flex items-center">
+                  <input
+                    type="number"
+                    min="0"
+                    value={localProfile.measurements[m.key as keyof typeof localProfile.measurements] || ''}
+                    onChange={(e) => {
+                      const val = Math.max(0, parseInt(e.target.value) || 0);
                       const newProfile = { ...localProfile, measurements: { ...localProfile.measurements, [m.key]: val } };
                       setLocalProfile(newProfile);
                       onUpdateProfile(newProfile);
                     }}
-                    className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-synk-blue active:scale-90 transition-transform"
-                  >
-                    <Plus className="w-6 h-6" />
-                  </button>
+                    onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0} 센티미터입니다.`)}
+                    className="flex-1 bg-white h-12 rounded-2xl text-center font-black text-xl shadow-inner border-2 border-synk-navy/5 outline-none focus:border-synk-blue/30 transition-colors"
+                  />
                 </div>
               </div>
             ))}

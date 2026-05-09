@@ -6,6 +6,10 @@
       "destination": "/api/analyze"
     },
     {
+      "source": "/api/check-key",
+      "destination": "/api/check-key"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
