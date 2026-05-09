@@ -43,7 +43,7 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
-      <header className="p-8 pb-4 flex items-center gap-6">
+      <header className="px-6 py-8 pb-4 flex items-center gap-6">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
           className="p-4 rounded-3xl bg-synk-offwhite text-synk-navy hover:bg-synk-blue/10 active:scale-95 transition-all"
@@ -53,7 +53,7 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
         <h1 className="text-4xl font-display font-black tracking-tighter">SETTINGS</h1>
       </header>
 
-      <div className="flex-1 px-8 pb-12 space-y-8 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 px-6 pb-12 space-y-8 overflow-y-auto custom-scrollbar">
         {/* Voice Settings */}
         <section className="space-y-6">
           <div className="flex items-center gap-3 text-synk-blue">

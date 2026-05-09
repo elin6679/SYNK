@@ -103,7 +103,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const step = STEPS[currentStep];
 
   return (
-    <div className="h-full flex flex-col p-8 pb-16 bg-white text-synk-navy overflow-y-auto">
+    <div className="h-full flex flex-col px-6 py-8 pb-16 bg-white text-synk-navy overflow-y-auto">
       <div className="flex-1 flex flex-col justify-center items-center gap-12 text-center py-10">
         <AnimatePresence mode="wait">
           <motion.div
@@ -279,7 +279,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         )}
 
         {step.id === 'measurements' && (
-          <div className="bg-white p-10 rounded-[3rem] shadow-2xl space-y-8 border-t-8 border-synk-blue/20">
+          <div className="bg-white p-6 rounded-[3rem] shadow-2xl space-y-8 border-t-8 border-synk-blue/20">
             {[
               { key: 'height', label: '나의 키' },
               { key: 'shoulder', label: '어깨너비' },
@@ -304,7 +304,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }));
                     }}
                     onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${profile.measurements[m.key as keyof typeof profile.measurements] || 0} 센티미터입니다.`)}
-                    className="flex-1 h-20 bg-synk-offwhite rounded-[2rem] text-center text-4xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
+                    className="flex-1 h-16 bg-synk-offwhite rounded-3xl text-center text-3xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
                     placeholder="0"
                   />
                 </div>
