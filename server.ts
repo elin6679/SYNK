@@ -24,18 +24,16 @@ async function startServer() {
   });
 
   app.post("/api/analyze", async (req, res) => {
-    console.log("Analyze request received");
+    console.log("Analyze request received in server.ts");
     try {
       const { image, prompt } = req.body;
       if (!image || !prompt) {
-        console.error("Missing image or prompt");
         return res.status(400).json({ error: "Missing image or prompt" });
       }
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        console.error("GEMINI_API_KEY missing");
-        return res.status(500).json({ error: "GEMINI_API_KEY가 서버에 설정되지 않았습니다. 환경 변수를 확인해주세요." });
+        return res.status(500).json({ error: "GEMINI_API_KEY가 설정되지 않았습니다." });
       }
 
       const genAI = new GoogleGenAI(apiKey);
@@ -56,7 +54,7 @@ async function startServer() {
     } catch (error) {
       console.error("AI Analysis Error:", error);
       const msg = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: `AI 분석 중 서버 오류 발생: ${msg}` });
+      res.status(500).json({ error: `서버 내부 오류: ${msg}` });
     }
   });
 
