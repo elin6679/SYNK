@@ -4,7 +4,7 @@ import { speechService } from '../lib/speech';
 import { hapticService } from '../lib/haptics';
 import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from '../components/AccessibleButton';
-import { ChevronRight, Mic, Ruler, Palette, Volume2, LogIn } from 'lucide-react';
+import { ChevronRight, Mic, BookOpen, Smartphone, User, LogIn, Plus, Minus } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
@@ -14,11 +14,11 @@ interface OnboardingProps {
 
 const STEPS = [
   { id: 'welcome', label: '환영합니다', hint: 'SYNK는 시각 정보를 감각으로 번역합니다. 로그인을 진행해 주세요. 아래로 스와이프하면 로그인 버튼이 있습니다.' },
-  { id: 'voice_setup', label: '음성 설정', hint: '안내 음성의 속도와 크기를 조절합니다.', icon: <Volume2 /> },
-  { id: 'description_mode', label: '설명 모드', hint: '분석 결과의 정보량을 선택합니다. 간단 모드는 핵심만, 상세 모드는 풍부한 설명을 제공합니다.', icon: <Palette /> },
-  { id: 'haptic_test', label: '촉각 확인', hint: '진동 강도를 확인합니다. 버튼을 누르면 진동이 느껴집니다.', icon: <Mic /> },
-  { id: 'measurements', label: '신체 데이터', hint: '정확한 핏 분석을 위해 키와 치수를 입력합니다.', icon: <Ruler /> },
-  { id: 'skin_tone', label: '피부톤 분석', hint: '카메라로 피부톤을 분석하여 개인화된 추천을 제공합니다.', icon: <Palette /> }
+  { id: 'voice_setup', label: '음성 설정', hint: '안내 음성의 속도와 크기를 조절합니다.', icon: <Mic /> },
+  { id: 'description_mode', label: '설명 모드', hint: '분석 결과의 정보량을 선택합니다. 간단 모드는 핵심만, 상세 모드는 풍부한 설명을 제공합니다.', icon: <BookOpen /> },
+  { id: 'haptic_test', label: '촉각 확인', hint: '진동 강도를 확인합니다. 버튼을 누르면 진동이 느껴집니다.', icon: <Smartphone /> },
+  { id: 'measurements', label: '신체 데이터', hint: '정확한 핏 분석을 위해 키와 치수를 입력합니다.', icon: <User /> },
+  { id: 'skin_tone', label: '피부톤 분석', hint: '카메라로 피부톤을 분석하여 개인화된 추천을 제공합니다.', icon: <ChevronRight /> }
 ];
 
 export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
@@ -100,22 +100,31 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const step = STEPS[currentStep];
 
   return (
-    <div className="h-full flex flex-col p-6 pb-12 bg-synk-offwhite">
-      <div className="flex-1 flex flex-col justify-center items-center gap-12 text-center">
+    <div className="h-full flex flex-col p-8 pb-16 bg-white text-synk-navy overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center items-center gap-12 text-center py-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={step.id}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            className="flex flex-col items-center gap-8"
+            className="flex flex-col items-center gap-10"
           >
-            <div className="w-32 h-32 rounded-full bg-synk-lavender text-synk-navy flex items-center justify-center text-5xl shadow-xl">
-              {step.icon || <div className="font-display font-black">S.</div>}
+            <div className="w-64 h-64 rounded-[4.5rem] flex items-center justify-center -rotate-2 bg-synk-blue shadow-2xl shadow-synk-blue/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+              {step.id === 'welcome' ? (
+                <div className="font-display font-black text-white text-9xl tracking-tighter text-balloon pt-4 relative z-10">
+                  SYNK
+                </div>
+              ) : (
+                <div className="text-white relative z-10 scale-[2.5]">
+                  {step.icon}
+                </div>
+              )}
             </div>
             <div>
-              <h1 className="text-5xl font-display font-bold mb-4 text-synk-navy">{step.label}</h1>
-              <p className="text-xl text-synk-grey leading-relaxed max-w-xs mx-auto">
+              <h1 className="text-6xl font-display font-black mb-6 tracking-tighter leading-none text-synk-navy">{step.label}</h1>
+              <p className="text-2xl font-bold text-synk-grey leading-tight max-w-sm mx-auto">
                 {step.hint}
               </p>
             </div>
@@ -123,12 +132,52 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </AnimatePresence>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {step.id === 'voice_setup' && (
+          <div className="bg-white p-10 rounded-[3rem] shadow-2xl space-y-10 border-t-8 border-synk-blue/20">
+            <div className="space-y-6">
+              <label className="text-xl font-bold text-synk-navy flex justify-between">
+                음성 속도
+                <span className="text-synk-blue font-black">{profile.settings.speechRate.toFixed(1)}x</span>
+              </label>
+              <input 
+                type="range" 
+                min="0.5" max="2.0" step="0.1"
+                value={profile.settings.speechRate}
+                onChange={(e) => {
+                  const rate = parseFloat(e.target.value);
+                  setProfile(prev => ({ ...prev, settings: { ...prev.settings, speechRate: rate } }));
+                  speechService.setSettings(rate, profile.settings.speechVolume);
+                  speechService.speak(`속도를 조절합니다. 현재 ${rate.toFixed(1)} 배속입니다.`, true);
+                }}
+                className="w-full h-4 bg-synk-offwhite rounded-lg appearance-none cursor-pointer accent-synk-blue"
+              />
+            </div>
+            <div className="space-y-6">
+              <label className="text-xl font-bold text-synk-navy flex justify-between">
+                음성 크기
+                <span className="text-synk-blue font-black">{Math.round(profile.settings.speechVolume * 100)}%</span>
+              </label>
+              <input 
+                type="range" 
+                min="0" max="1.0" step="0.1"
+                value={profile.settings.speechVolume}
+                onChange={(e) => {
+                  const vol = parseFloat(e.target.value);
+                  setProfile(prev => ({ ...prev, settings: { ...prev.settings, speechVolume: vol } }));
+                  speechService.setSettings(profile.settings.speechRate, vol);
+                  speechService.speak(`볼륨을 조절합니다. 현재 ${Math.round(vol * 100)} 퍼센트입니다.`, true);
+                }}
+                className="w-full h-4 bg-synk-offwhite rounded-lg appearance-none cursor-pointer accent-synk-blue"
+              />
+            </div>
+          </div>
+        )}
+
         {step.id === 'welcome' && !isVoiceLoggingIn && (
           <div className="flex flex-col gap-4">
             <AccessibleButton
               label="음성 로그인 시작"
-              hint="버튼을 누르면 이메일을 말하라는 안내가 나옵니다"
               variant="primary"
               icon={<Mic className="w-10 h-10" />}
               onClick={() => {
@@ -139,9 +188,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               }}
             />
             <AccessibleButton
-              label="Google로 로그인"
-              hint="기존 구글 계정으로 로그인합니다"
-              variant="secondary"
+              label="Google 로그인"
+              variant="primary"
               icon={<LogIn className="w-10 h-10" />}
               onClick={async () => {
                 try {
@@ -160,27 +208,23 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         )}
 
         {isVoiceLoggingIn && step.id === 'welcome' && (
-          <div className="bg-white p-8 rounded-3xl shadow-xl space-y-6 text-center">
-            <div className="text-sm text-synk-grey uppercase font-bold tracking-widest">음성 입력 중</div>
-            <div className="text-3xl font-bold text-synk-navy">
-              {voiceLoginStep === 'email' ? '이메일을 말해주세요' : '비밀번호를 말해주세요'}
+          <div className="bg-white p-10 rounded-[3rem] shadow-2xl space-y-8 text-center border-t-8 border-synk-grey/20">
+            <div className="text-sm text-synk-blue uppercase font-black tracking-widest bg-synk-blue/5 py-2 rounded-full">Voice Recog Active</div>
+            <div className="text-4xl font-black text-synk-navy">
+              {voiceLoginStep === 'email' ? '이메일을\n말해주세요' : '비밀번호를\n말해주세요'}
             </div>
-            <div className="flex flex-col gap-2 text-left">
+            <div className="flex flex-col gap-4 text-left">
               <div 
-                onFocus={() => speechService.speak('이메일 입력창입니다')} 
-                tabIndex={0}
-                className="p-4 bg-synk-offwhite rounded-xl border border-synk-navy/10"
+                className="p-6 bg-synk-offwhite text-synk-navy rounded-3xl border-2 border-synk-navy/5 shadow-inner"
               >
-                <span className="text-xs block text-synk-grey mb-1">이메일</span>
-                <span className="text-lg break-all">{email || '대기 중...'}</span>
+                <span className="text-xs block font-black uppercase opacity-40 mb-1">Email Address</span>
+                <span className="text-xl font-bold break-all">{email || 'Waiting...'}</span>
               </div>
               <div 
-                onFocus={() => speechService.speak('비밀번호 입력창입니다')} 
-                tabIndex={0}
-                className="p-4 bg-synk-offwhite rounded-xl border border-synk-navy/10"
+                className="p-6 bg-synk-offwhite text-synk-navy rounded-3xl border-2 border-synk-navy/5 shadow-inner"
               >
-                <span className="text-xs block text-synk-grey mb-1">비밀번호</span>
-                <span className="text-lg">{'*'.repeat(password.length) || '대기 중...'}</span>
+                <span className="text-xs block font-black uppercase opacity-40 mb-1">Secret Key</span>
+                <span className="text-xl font-bold">{'*'.repeat(password.length) || 'Waiting...'}</span>
               </div>
             </div>
             <AccessibleButton 
@@ -201,18 +245,18 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         {step.id === 'description_mode' && (
           <div className="flex flex-col gap-4">
             <AccessibleButton
-              label="간단 모드"
-              hint="핵심적인 정보만 빠르게 안내합니다"
-              variant={profile.settings.detailMode === 'simple' ? 'primary' : 'secondary'}
+              label="간단 모드 (Short)"
+              variant={profile.settings.detailMode === 'simple' ? 'secondary' : 'ghost'}
+              className={profile.settings.detailMode === 'simple' ? '' : 'text-synk-navy border-synk-navy/5 bg-synk-offwhite'}
               onClick={() => {
                 setProfile(prev => ({ ...prev, settings: { ...prev.settings, detailMode: 'simple' } }));
                 speechService.speak('간단 모드가 선택되었습니다.');
               }}
             />
             <AccessibleButton
-              label="상세 모드"
-              hint="색감, 분위기, 스타일 등 풍부한 설명을 제공합니다"
-              variant={profile.settings.detailMode === 'detailed' ? 'primary' : 'secondary'}
+              label="상세 모드 (Detailed)"
+              variant={profile.settings.detailMode === 'detailed' ? 'secondary' : 'ghost'}
+              className={profile.settings.detailMode === 'detailed' ? '' : 'text-synk-navy border-synk-navy/5 bg-synk-offwhite'}
               onClick={() => {
                 setProfile(prev => ({ ...prev, settings: { ...prev.settings, detailMode: 'detailed' } }));
                 speechService.speak('상세 모드가 선택되었습니다.');
@@ -223,23 +267,25 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         
         {step.id === 'haptic_test' && (
           <AccessibleButton
-            label="진동 테스트"
-            hint="버튼을 눌러 진동을 확인하세요"
-            variant="ghost"
+            label="진동 피드백 테스트"
+            variant="secondary"
             onClick={() => hapticService.vibrate([100, 50, 100])}
           />
         )}
 
         {step.id === 'measurements' && (
-          <div className="bg-white p-6 rounded-[32px] shadow-xl space-y-6">
+          <div className="bg-white p-10 rounded-[3rem] shadow-2xl space-y-8 border-t-8 border-synk-blue/20">
             {[
-              { key: 'height', label: '키', unit: 'cm' },
-              { key: 'shoulder', label: '어깨 너비', unit: 'cm' },
-              { key: 'chest', label: '가슴 둘레', unit: 'cm' }
+              { key: 'height', label: '나의 키' },
+              { key: 'shoulder', label: '어깨너비' },
+              { key: 'chest', label: '가슴둘레' }
             ].map((m) => (
-              <div key={m.key} className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-synk-grey ml-2">{m.label} ({m.unit})</label>
-                <div className="flex items-center gap-3">
+              <div key={m.key} className="flex flex-col gap-4">
+                <label className="text-xl font-bold text-synk-navy ml-2 flex items-center justify-between">
+                  {m.label}
+                  <span className="text-sm font-black opacity-30 uppercase tracking-widest">centimeters</span>
+                </label>
+                <div className="flex items-center gap-4">
                   <button
                     onClick={() => {
                       const currentVal = profile.measurements[m.key as keyof typeof profile.measurements] || 0;
@@ -250,8 +296,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }));
                       speechService.speak(`${m.label} ${newVal} 센티미터`);
                     }}
-                    className="w-14 h-14 rounded-2xl bg-synk-offwhite text-synk-navy flex items-center justify-center text-3xl font-bold active:scale-90 border border-synk-navy/5"
-                  > - </button>
+                    className="w-18 h-18 rounded-[2rem] bg-synk-blue text-white flex items-center justify-center text-4xl font-black active:scale-90 shadow-xl shadow-synk-blue/20"
+                  > <Minus className="w-8 h-8" /> </button>
                   <input
                     type="number"
                     value={profile.measurements[m.key as keyof typeof profile.measurements] || ''}
@@ -263,7 +309,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }));
                     }}
                     onFocus={() => speechService.speak(`${m.label} 입력창입니다. 현재 ${profile.measurements[m.key as keyof typeof profile.measurements] || 0} 센티미터입니다.`)}
-                    className="flex-1 h-14 bg-synk-offwhite rounded-2xl text-center text-xl font-bold border-2 border-transparent focus:border-synk-blue outline-none text-synk-navy"
+                    className="flex-1 h-18 bg-synk-offwhite rounded-[2rem] text-center text-3xl font-black border-4 border-synk-navy/5 outline-none text-synk-navy focus:border-synk-blue/30 transition-colors"
                     placeholder="0"
                   />
                   <button
@@ -276,20 +322,39 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }));
                       speechService.speak(`${m.label} ${newVal} 센티미터`);
                     }}
-                    className="w-14 h-14 rounded-2xl bg-synk-offwhite text-synk-navy flex items-center justify-center text-3xl font-bold active:scale-90 border border-synk-navy/5"
-                  > + </button>
+                    className="w-18 h-18 rounded-[2rem] bg-white text-synk-navy flex items-center justify-center text-4xl font-black active:scale-95 shadow-xl shadow-black/5 border-2 border-synk-navy/5"
+                  > <Plus className="w-8 h-8" /> </button>
                 </div>
               </div>
             ))}
           </div>
         )}
         
-        <AccessibleButton
-          label={currentStep === STEPS.length - 1 ? '시작하기' : '다음으로'}
-          hint="화면 오른쪽 아래를 누르세요"
-          onClick={handleNext}
-          icon={<ChevronRight className="w-12 h-12" />}
-        />
+        {(!isVoiceLoggingIn || step.id !== 'welcome') && (
+          <div className="pt-10 flex items-center justify-between mt-auto">
+            <div className="text-2xl font-black text-synk-navy/30 tracking-tighter">
+              {currentStep + 1} <span className="opacity-50">/</span> {STEPS.length}
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {currentStep > 0 && (
+                <button 
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  className="px-6 py-3 font-black text-synk-navy/40 uppercase tracking-widest text-sm hover:text-synk-navy transition-colors"
+                >
+                  Back
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                className="bg-gradient-to-r from-synk-blue to-synk-cyan text-white px-8 py-4 rounded-full font-black text-xl shadow-xl shadow-synk-blue/20 flex items-center gap-2 active:scale-95 transition-all"
+              >
+                {currentStep === STEPS.length - 1 ? '시작하기' : '다음'}
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

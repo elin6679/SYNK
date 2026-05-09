@@ -138,22 +138,22 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
   };
 
   return (
-    <div className="h-full relative bg-black flex flex-col">
-      <div className="absolute top-6 left-6 right-6 z-10 flex justify-between">
+    <div className="h-full relative bg-white flex flex-col">
+      <div className="absolute top-6 left-6 right-6 z-20 flex justify-between">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30"
+          className="p-5 rounded-3xl bg-white shadow-xl shadow-black/5 text-synk-navy border border-synk-navy/5 active:scale-95 transition-all"
           aria-label="닫기"
         >
           <X className="w-10 h-10" />
         </button>
-        <div className="p-5 rounded-full bg-synk-blue text-white shadow-lg animate-pulse">
-            <Info className="w-10 h-10" />
+        <div className="p-5 rounded-3xl bg-synk-blue text-white shadow-xl shadow-synk-blue/20">
+            <Camera className="w-10 h-10" />
         </div>
       </div>
 
       <div 
-        className="flex-1 w-full bg-synk-offwhite relative overflow-hidden"
+        className="flex-1 w-full bg-white relative overflow-hidden"
         onTouchMove={handleTouchMove}
         onMouseMove={handleTouchMove}
       >
@@ -166,9 +166,9 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         
         {isAnalyzing && (
-          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white gap-6">
-            <RefreshCw className="w-20 h-20 animate-spin text-synk-cyan" />
-            <p className="text-2xl font-bold">감각 번역 중...</p>
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-synk-navy gap-6 z-30">
+            <RefreshCw className="w-24 h-24 animate-spin text-synk-blue" />
+            <p className="text-3xl font-black tracking-tighter">감각 번역 중...</p>
           </div>
         )}
 
@@ -176,25 +176,26 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
           <motion.div 
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            className="absolute inset-0 bg-synk-offwhite/98 p-12 overflow-y-auto text-synk-navy"
+            className="absolute inset-0 bg-white p-12 overflow-y-auto text-synk-navy z-40"
           >
-            <div className="flex flex-col gap-8 pb-32">
-              <h2 className="text-4xl font-bold border-b border-synk-navy/20 pb-4">분석 결과</h2>
-              <p className="text-2xl leading-relaxed opacity-90">{result}</p>
+            <div className="flex flex-col gap-10 pb-32 pt-20">
+              <h2 className="text-5xl font-black tracking-tighter border-b-4 border-synk-blue/10 pb-6 text-synk-blue">분석 결과</h2>
+              <p className="text-2xl leading-relaxed font-medium text-synk-navy/90">{result}</p>
               
               <div className="grid grid-cols-1 gap-4 mt-8">
                 <AccessibleButton 
                    label="옷장에 저장"
                    hint="나중에 코디할 수 있습니다"
-                   variant="secondary"
-                   icon={<Save className="w-8 h-8" />}
+                   variant="primary"
+                   icon={<Save className="w-10 h-10" />}
                    onClick={saveToCloset}
+                   className="h-24 text-2xl"
                 />
                 <AccessibleButton 
                    label="다시 촬영"
                    variant="ghost"
-                   className="border-synk-navy/30"
-                   icon={<RefreshCw className="w-8 h-8" />}
+                   className="h-24 text-2xl border-2 border-synk-navy/5"
+                   icon={<RefreshCw className="w-10 h-10" />}
                    onClick={() => {
                      setResult(null);
                      speechService.speak('다시 촬영을 시작합니다.');
@@ -206,14 +207,15 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
         )}
       </div>
 
-      <div className="p-8 bg-synk-offwhite border-t border-synk-navy/5">
+      <div className="p-8 bg-white border-t-2 border-synk-offwhite">
         {!result && (
           <AccessibleButton
             label={isAnalyzing ? '분석 중...' : '이미지 분석'}
             hint="화면 정중앙을 분석합니다"
+            variant="primary"
             icon={<Camera className="w-12 h-12" />}
             onClick={captureAndAnalyze}
-            className="h-32 bg-synk-cyan text-synk-navy"
+            className="h-32 text-3xl font-black"
           />
         )}
       </div>

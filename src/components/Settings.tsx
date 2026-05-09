@@ -3,75 +3,194 @@ import { speechService } from '../lib/speech';
 import { hapticService } from '../lib/haptics';
 import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
-import { ChevronLeft, Volume2, FastForward, LogOut } from 'lucide-react';
+import { ChevronLeft, Mic, BookOpen, Smartphone, User, LogOut, Plus, Minus } from 'lucide-react';
 
 interface SettingsProps {
   onNavigate: (screen: AppScreen) => void;
   profile: UserProfile | null;
+  onUpdateProfile: (profile: UserProfile) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile }) => {
-  const [rate, setRate] = useState(profile?.settings?.speechRate || 1.0);
-  const [volume, setVolume] = useState(profile?.settings?.speechVolume || 1.0);
+export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdateProfile }) => {
+  const [localProfile, setLocalProfile] = useState<UserProfile>(profile || {
+    name: '사용자',
+    measurements: {},
+    settings: {
+      speechRate: 1.0,
+      speechVolume: 1.0,
+      hapticIntensity: 1.0,
+      detailMode: 'detailed',
+    }
+  });
 
-  const adjustRate = (delta: number) => {
-    const newRate = Math.max(0.5, Math.min(2.0, rate + delta));
-    setRate(newRate);
-    speechService.setSettings(newRate, volume);
-    speechService.speak(`말하기 속도를 ${newRate.toFixed(1)}배로 설정했습니다.`);
+  const updateSettings = (key: keyof typeof localProfile.settings, value: any) => {
+    const newProfile = {
+      ...localProfile,
+      settings: { ...localProfile.settings, [key]: value }
+    };
+    setLocalProfile(newProfile);
+    onUpdateProfile(newProfile);
+    
+    if (key === 'speechRate') {
+      speechService.setSettings(value, localProfile.settings.speechVolume);
+      speechService.speak(`${value.toFixed(1)} 배속으로 변경합니다.`, true);
+    } else if (key === 'speechVolume') {
+      speechService.setSettings(localProfile.settings.speechRate, value);
+      speechService.speak(`볼륨을 변경합니다.`, true);
+    }
     hapticService.tap();
   };
 
   return (
-    <div className="h-full flex flex-col p-6 bg-synk-offwhite">
-      <header className="py-6 flex items-center gap-4">
+    <div className="h-full flex flex-col bg-white overflow-hidden">
+      <header className="p-8 pb-4 flex items-center gap-6">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-4 rounded-full bg-white shadow-md active:scale-90"
+          className="p-4 rounded-3xl bg-synk-offwhite text-synk-navy hover:bg-synk-blue/10 active:scale-95 transition-all"
         >
           <ChevronLeft className="w-8 h-8" />
         </button>
-        <h1 className="text-3xl font-display font-bold">설정</h1>
+        <h1 className="text-4xl font-display font-black tracking-tighter">SETTINGS</h1>
       </header>
 
-      <div className="flex-1 space-y-12 py-8 overflow-y-auto">
+      <div className="flex-1 px-8 pb-12 space-y-8 overflow-y-auto custom-scrollbar">
+        {/* Voice Settings */}
         <section className="space-y-6">
-          <div className="flex items-center gap-4 text-synk-grey uppercase tracking-widest font-bold text-sm">
-            <Volume2 className="w-5 h-5" />
-            음성 가이드 설정
+          <div className="flex items-center gap-3 text-synk-blue">
+            <div className="p-2 rounded-xl bg-synk-blue/10">
+              <Mic className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">음성 설정</h2>
+          </div>
+          
+          <div className="bg-synk-offwhite p-6 rounded-[2.5rem] space-y-8 border-2 border-synk-navy/5">
+            <div className="space-y-4">
+              <div className="flex justify-between font-bold px-2">
+                <span className="text-synk-grey">속도</span>
+                <span className="text-synk-blue">{localProfile.settings.speechRate.toFixed(1)}x</span>
+              </div>
+              <input 
+                type="range" min="0.5" max="2.0" step="0.1"
+                value={localProfile.settings.speechRate}
+                onChange={(e) => updateSettings('speechRate', parseFloat(e.target.value))}
+                className="w-full h-3 bg-white rounded-full appearance-none accent-synk-blue shadow-inner"
+              />
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-between font-bold px-2">
+                <span className="text-synk-grey">볼륨</span>
+                <span className="text-synk-blue">{Math.round(localProfile.settings.speechVolume * 100)}%</span>
+              </div>
+              <input 
+                type="range" min="0" max="1.0" step="0.1"
+                value={localProfile.settings.speechVolume}
+                onChange={(e) => updateSettings('speechVolume', parseFloat(e.target.value))}
+                className="w-full h-3 bg-white rounded-full appearance-none accent-synk-blue shadow-inner"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Description Mode */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 text-synk-blue">
+            <div className="p-2 rounded-xl bg-synk-blue/10">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">설명 모드</h2>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <AccessibleButton 
-              label="속도 느리게" 
-              variant="ghost" 
-              onClick={() => adjustRate(-0.1)} 
-            />
-            <AccessibleButton 
-              label="속도 빠르게" 
-              variant="ghost" 
-              onClick={() => adjustRate(0.1)} 
-            />
-          </div>
-          <div className="p-8 bg-white rounded-3xl text-center shadow-inner">
-            <div className="text-sm text-synk-grey mb-2">현재 속도</div>
-            <div className="text-5xl font-black">{rate.toFixed(1)}x</div>
+            <button 
+              onClick={() => updateSettings('detailMode', 'simple')}
+              className={`p-6 rounded-3xl font-bold transition-all border-2 ${localProfile.settings.detailMode === 'simple' ? 'bg-synk-blue text-white border-transparent shadow-lg shadow-synk-blue/20' : 'bg-synk-offwhite text-synk-navy border-synk-navy/5'}`}
+            >
+              간단 모드
+            </button>
+            <button 
+              onClick={() => updateSettings('detailMode', 'detailed')}
+              className={`p-6 rounded-3xl font-bold transition-all border-2 ${localProfile.settings.detailMode === 'detailed' ? 'bg-synk-blue text-white border-transparent shadow-lg shadow-synk-blue/20' : 'bg-synk-offwhite text-synk-navy border-synk-navy/5'}`}
+            >
+              상세 모드
+            </button>
           </div>
         </section>
 
+        {/* Haptic Test */}
         <section className="space-y-6">
-           <AccessibleButton 
-             label="햅틱 강도 테스트" 
-             hint="진동을 느껴보세요"
-             onClick={() => hapticService.success()}
-           />
+          <div className="flex items-center gap-3 text-synk-blue">
+            <div className="p-2 rounded-xl bg-synk-blue/10">
+              <Smartphone className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">촉각 확인</h2>
+          </div>
+          
+          <AccessibleButton 
+            label="진동 강도 테스트" 
+            variant="secondary"
+            className="w-full"
+            icon={<Smartphone className="w-8 h-8" />}
+            onClick={() => {
+              hapticService.success();
+              speechService.speak('진동이 느껴지시나요?');
+            }}
+          />
         </section>
 
-        <div className="pt-12">
+        {/* Body Data */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 text-synk-blue">
+            <div className="p-2 rounded-xl bg-synk-blue/10">
+              <User className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">신체 데이터</h2>
+          </div>
+          
+          <div className="bg-synk-offwhite p-6 rounded-[2.5rem] border-2 border-synk-navy/5 space-y-6">
+            {[
+              { key: 'height', label: '키' },
+              { key: 'shoulder', label: '어깨너비' }
+            ].map(m => (
+              <div key={m.key} className="space-y-3">
+                <label className="text-sm font-black text-synk-grey uppercase px-2">{m.label}</label>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      const val = (localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0) - 1;
+                      const newProfile = { ...localProfile, measurements: { ...localProfile.measurements, [m.key]: Math.max(0, val) } };
+                      setLocalProfile(newProfile);
+                      onUpdateProfile(newProfile);
+                    }}
+                    className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-synk-blue active:scale-90 transition-transform"
+                  >
+                    <Minus className="w-6 h-6" />
+                  </button>
+                  <div className="flex-1 bg-white h-12 rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">
+                    {localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0} cm
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const val = (localProfile.measurements[m.key as keyof typeof localProfile.measurements] || 0) + 1;
+                      const newProfile = { ...localProfile, measurements: { ...localProfile.measurements, [m.key]: val } };
+                      setLocalProfile(newProfile);
+                      onUpdateProfile(newProfile);
+                    }}
+                    className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-synk-blue active:scale-90 transition-transform"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="pt-8">
           <AccessibleButton 
             label="로그아웃" 
             variant="ghost" 
-            className="text-red-500 border-red-500 hover:bg-red-50"
+            className="w-full text-red-500 border-red-500/10 hover:bg-red-50"
+            icon={<LogOut className="w-8 h-8" />}
             onClick={() => {
               localStorage.removeItem('synk_profile');
               window.location.reload();

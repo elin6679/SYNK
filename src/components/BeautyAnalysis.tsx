@@ -103,18 +103,18 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
   };
 
   return (
-    <div className="h-full relative bg-synk-offwhite flex flex-col">
-      <div className="absolute top-6 left-6 right-6 z-10 flex justify-between">
+    <div className="h-full relative bg-white flex flex-col pt-24">
+      <div className="absolute top-6 left-6 right-6 z-20 flex justify-between">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-5 rounded-full bg-white/50 backdrop-blur-md text-synk-navy border border-synk-navy/10"
+          className="p-5 rounded-3xl bg-synk-offwhite text-synk-navy border border-synk-navy/5 active:scale-95 transition-all"
           aria-label="닫기"
         >
           <X className="w-10 h-10" />
         </button>
       </div>
 
-      <div className="flex-1 w-full relative overflow-hidden flex items-center justify-center">
+      <div className="flex-1 w-full bg-white relative overflow-hidden">
         <video 
           ref={videoRef}
           autoPlay 
@@ -124,49 +124,50 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         
         {/* Face Guide Overlay */}
-        <div className="absolute inset-0 border-[40px] border-black/10 pointer-events-none">
-          <div className="w-full h-full border-4 border-synk-blue/40 rounded-[100px] flex items-center justify-center">
-             <div className="w-1 h-20 bg-synk-blue/20 absolute" />
-             <div className="w-20 h-1 bg-synk-blue/20 absolute" />
+        <div className="absolute inset-0 border-[60px] border-white/20 pointer-events-none">
+          <div className="w-full h-full border-4 border-synk-blue/40 rounded-[120px] flex items-center justify-center">
+             <div className="w-1 h-32 bg-synk-blue/20 absolute" />
+             <div className="w-32 h-1 bg-synk-blue/20 absolute" />
           </div>
         </div>
 
         {isAnalyzing && (
-          <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center text-synk-navy gap-6">
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-synk-navy gap-6 z-30">
             <RefreshCw className="w-24 h-24 animate-spin text-synk-blue" />
-            <p className="text-3xl font-bold">얼굴 좌표 읽는 중...</p>
+            <p className="text-3xl font-black tracking-tighter">얼굴 좌표 읽는 중...</p>
           </div>
         )}
 
         {result && (
           <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="absolute inset-x-6 bottom-32 bg-white/95 backdrop-blur-md rounded-[40px] p-8 shadow-2xl text-synk-navy flex flex-col gap-6 border border-synk-navy/5"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="absolute inset-x-6 bottom-12 bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] text-synk-navy flex flex-col gap-6 border-b-8 border-synk-blue/10 z-40"
           >
-            <div className="flex items-center gap-4 text-synk-blue font-bold text-2xl">
+            <div className="flex items-center gap-4 text-synk-blue font-black text-3xl tracking-tighter">
               <CheckCircle2 className="w-10 h-10" />
               분석 완료
             </div>
-            <p className="text-xl leading-snug max-h-60 overflow-y-auto">{result}</p>
+            <p className="text-xl leading-relaxed max-h-80 overflow-y-auto font-medium text-synk-navy/80">{result}</p>
             <AccessibleButton 
                label="다시 분석" 
                variant="ghost" 
-               className="py-4"
+               className="py-5"
                onClick={() => setResult(null)} 
             />
           </motion.div>
         )}
       </div>
 
-      <div className="p-8 bg-synk-offwhite border-t border-synk-navy/5">
+      <div className="p-8 bg-white border-t-2 border-synk-offwhite">
         {!result && (
           <AccessibleButton
             label={isAnalyzing ? '분석 중...' : '메이크업 대칭 분석'}
             hint="얼굴 전체를 분석합니다"
-            icon={<User className="w-12 h-12" />}
+            variant="primary"
+            icon={<User className="w-10 h-10" />}
             onClick={analyzeBeauty}
-            className="h-32 bg-synk-blue text-synk-navy"
+            className="h-32 text-2xl font-black"
           />
         )}
       </div>

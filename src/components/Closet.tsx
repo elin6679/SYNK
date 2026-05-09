@@ -40,25 +40,25 @@ export const Closet: React.FC<ClosetProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="h-full flex flex-col p-6 bg-synk-offwhite">
-      <header className="py-6 flex items-center gap-4 text-synk-navy">
+    <div className="h-full flex flex-col bg-white">
+      <header className="p-8 pb-4 flex items-center gap-6 text-synk-navy">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-4 rounded-full bg-white/50 backdrop-blur-md shadow-sm active:scale-90 border border-white/50"
+          className="p-4 rounded-3xl bg-synk-offwhite text-synk-navy hover:bg-synk-blue/10 active:scale-95 transition-all"
           aria-label="뒤로 가기"
         >
           <ChevronLeft className="w-8 h-8" />
         </button>
-        <h1 className="text-3xl font-display font-bold">내 옷장</h1>
+        <h1 className="text-4xl font-display font-black tracking-tighter uppercase">Closet</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto px-8 space-y-6 pb-40 custom-scrollbar">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-synk-grey text-xl">로딩 중...</div>
+          <div className="h-full flex items-center justify-center text-synk-grey text-2xl font-bold italic animate-pulse">Loading...</div>
         ) : items.length === 0 ? (
-          <div className="h-60 flex flex-col items-center justify-center text-synk-grey text-center gap-4">
-            <Shirt className="w-20 h-20 opacity-20" />
-            <p className="text-xl">옷장이 비어 있습니다.<br/>카메라 분석으로 옷을 추가해보세요.</p>
+          <div className="h-full flex flex-col items-center justify-center text-synk-grey/40 text-center gap-6">
+            <Shirt className="w-32 h-32" />
+            <p className="text-2xl font-bold">옷장이 비어 있습니다.<br/>분석으로 옷을 추가해보세요.</p>
           </div>
         ) : (
           items.map((item) => (
@@ -66,20 +66,26 @@ export const Closet: React.FC<ClosetProps> = ({ onNavigate }) => {
               key={item.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[32px] p-6 shadow-md border-2 border-transparent active:border-synk-blue"
-              onClick={() => speechService.speak(`${item.name}. ${item.description}`)}
+              className="bg-synk-offwhite rounded-[2.5rem] p-6 shadow-sm border-2 border-transparent active:border-synk-blue/30 transition-all active:scale-98"
+              onClick={() => {
+                speechService.speak(`${item.name}. ${item.description}`);
+                hapticService.tap();
+              }}
             >
-              <div className="flex gap-6">
-                <div className="w-24 h-24 rounded-2xl bg-synk-offwhite flex items-center justify-center overflow-hidden">
+              <div className="flex gap-6 items-center">
+                <div className="w-28 h-28 rounded-3xl bg-white flex items-center justify-center overflow-hidden shadow-inner border border-synk-navy/5">
                   {item.imageUrl ? (
                     <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
-                    <Shirt className="w-12 h-12 text-synk-grey" />
+                    <Shirt className="w-14 h-14 text-synk-blue/40" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-1">{item.name}</h3>
-                  <p className="text-synk-grey text-lg">{item.color} • {item.category}</p>
+                  <h3 className="text-2xl font-black text-synk-navy mb-1 tracking-tight">{item.name}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-white rounded-full text-xs font-black uppercase text-synk-blue border border-synk-blue/10">{item.category}</span>
+                    <span className="px-3 py-1 bg-white rounded-full text-xs font-black uppercase text-synk-grey border border-synk-navy/5">{item.color}</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -87,13 +93,14 @@ export const Closet: React.FC<ClosetProps> = ({ onNavigate }) => {
         )}
       </div>
 
-      <div className="fixed bottom-12 left-6 right-6">
+      <div className="fixed bottom-12 left-8 right-8">
         <AccessibleButton 
           label="옷 추가하기"
           hint="카메라로 분석하여 옷장에 저장합니다"
+          variant="primary"
           icon={<Plus className="w-10 h-10" />}
           onClick={() => onNavigate(AppScreen.ANALYSIS)}
-          className="bg-synk-navy py-6"
+          className="h-28 text-2xl font-black"
         />
       </div>
     </div>

@@ -55,45 +55,48 @@ export const StoreMode: React.FC<StoreModeProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="h-full relative bg-black flex flex-col">
-      <div className="absolute top-6 left-6 right-6 z-10 flex justify-between">
+    <div className="h-full relative bg-white flex flex-col pt-24">
+      <div className="absolute top-6 left-6 right-6 z-20 flex justify-between">
         <button 
           onClick={() => onNavigate(AppScreen.HOME)}
-          className="p-5 rounded-full bg-white/50 backdrop-blur-md text-synk-navy border border-synk-navy/10"
+          className="p-5 rounded-3xl bg-synk-offwhite text-synk-navy border border-synk-navy/5 active:scale-95 transition-all"
         >
           <X className="w-10 h-10" />
         </button>
       </div>
 
-      <div className="flex-1 w-full bg-synk-navy relative overflow-hidden flex items-center justify-center">
+      <div className="flex-1 w-full bg-white relative overflow-hidden flex items-center justify-center">
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover grayscale opacity-40"
         />
         
-        {/* QR Scanner Frame - Updated with pastel blue */}
-        <div className="absolute w-72 h-72 border-4 border-synk-blue rounded-3xl flex items-center justify-center">
-          <div className="w-full h-1 bg-synk-blue absolute top-1/2 animate-bounce opacity-50" />
-          <Zap className="w-12 h-12 text-synk-blue animate-pulse" />
+        {/* QR Scanner Frame */}
+        <div className="absolute w-80 h-80 border-8 border-synk-blue/40 rounded-[3rem] flex items-center justify-center p-8">
+          <div className="w-full h-full border-4 border-synk-blue border-dashed rounded-[2rem] flex items-center justify-center bg-synk-blue/5">
+            <Zap className="w-20 h-20 text-synk-blue animate-pulse" />
+          </div>
+          <div className="w-full h-2 bg-synk-blue absolute top-1/2 left-0 shadow-[0_0_20px_rgba(0,82,255,0.5)] animate-scan-line" />
         </div>
 
         {isScanning && (
-          <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center text-synk-navy gap-6">
-            <RefreshCw className="w-20 h-20 animate-spin text-synk-blue" />
-            <p className="text-2xl font-bold">코드 해독 중...</p>
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-synk-navy gap-6 z-30">
+            <RefreshCw className="w-24 h-24 animate-spin text-synk-blue" />
+            <p className="text-3xl font-black tracking-tighter">코드 해독 중...</p>
           </div>
         )}
       </div>
 
-      <div className="p-8 bg-synk-offwhite border-t border-synk-navy/5">
+      <div className="p-8 bg-white border-t-2 border-synk-offwhite">
         <AccessibleButton
           label={isScanning ? '스캔 중' : 'QR 스캔하기'}
           hint="화면 중앙의 사각형에 코드를 맞추세요"
+          variant="primary"
           icon={<QrCode className="w-12 h-12" />}
           onClick={simulateScan}
-          className="h-32 bg-synk-peach text-synk-navy"
+          className="h-32 text-2xl font-black"
         />
       </div>
     </div>

@@ -55,9 +55,9 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   };
 
   const variants = {
-    primary: 'bg-synk-navy text-white hover:bg-opacity-90',
-    secondary: 'bg-synk-blue text-synk-navy hover:brightness-95 shadow-md',
-    ghost: 'border-2 border-synk-navy/20 text-synk-navy bg-white/50 backdrop-blur-sm'
+    primary: 'bg-gradient-to-br from-synk-blue to-synk-cyan text-white hover:brightness-110 shadow-lg shadow-synk-blue/20 rounded-2xl font-bold py-4 px-6 active:scale-95 transition-all',
+    secondary: 'bg-white text-synk-navy hover:bg-synk-offwhite shadow-lg shadow-black/5 rounded-2xl font-bold py-4 px-6 border-2 border-synk-navy/5',
+    ghost: 'border-2 border-synk-navy/10 text-synk-navy bg-white shadow-sm rounded-2xl py-4 px-6'
   };
 
   return (

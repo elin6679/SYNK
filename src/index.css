@@ -1,18 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Dongle:wght@300;400;700&family=Gowun+Dodum&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Quicksand", "Noto Sans KR", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Quicksand", sans-serif;
+  --font-sans: "Gowun Dodum", "Quicksand", sans-serif;
+  --font-display: "Dongle", sans-serif;
   
-  --color-synk-offwhite: #FFF5F7; /* Soft Pastel Pinkish White */
-  --color-synk-navy: #475569;
-  --color-synk-grey: #94A3B8;
-  --color-synk-blue: #E0F2FE; /* Pastel Blue */
-  --color-synk-cyan: #ECFDF5;
-  --color-synk-pink: #FCE7F3; /* Soft Pink */
-  --color-synk-lavender: #F3E8FF; /* Soft Lavender */
-  --color-synk-peach: #FFF7ED; /* Soft Peach */
+  --color-synk-offwhite: #FFFFFF;
+  --color-synk-navy: #0F172A;
+  --color-synk-grey: #64748B;
+  --color-synk-blue: #0052FF; /* Vivid Deep Blue from reference */
+  --color-synk-yellow: #FFD600; /* Bright Yellow from reference */
+  --color-synk-cyan: #22D3EE;
+  --color-synk-pink: #F472B6;
+  --color-synk-lavender: #818CF8;
+  --color-synk-peach: #FB923C;
+  --color-synk-primary: #0052FF;
+}
+
+@layer utilities {
+  .text-balloon {
+    color: #FFFFFF;
+    text-shadow: 
+      0 1px 0 #cccccc,
+      0 2px 0 #c5c5c5,
+      0 3px 0 #bbb,
+      0 4px 0 #b9b9b9,
+      0 5px 0 #aaa,
+      0 6px 1px rgba(0,0,0,.1),
+      0 0 5px rgba(0,0,0,.1),
+      0 1px 3px rgba(0,0,0,.3),
+      0 3px 5px rgba(0,0,0,.2),
+      0 5px 10px rgba(0,0,0,.25),
+      0 10px 10px rgba(0,0,0,.2),
+      0 20px 20px rgba(0,0,0,.15);
+    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+  }
+
+  .puffy-card {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      inset 0 10px 20px rgba(255,255,255,0.4),
+      inset 0 -10px 20px rgba(0,0,0,0.1),
+      0 20px 40px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  @keyframes scan {
+    0% { transform: translateY(-160px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(160px); opacity: 0; }
+  }
+
+  .animate-scan-line {
+    animation: scan 2s ease-in-out infinite;
+  }
 }
 
 @layer base {

@@ -31,17 +31,22 @@ export default function App() {
     setCurrentScreen(AppScreen.HOME);
   };
 
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+    localStorage.setItem('synk_profile', JSON.stringify(updatedProfile));
+  };
+
   const navigateTo = (screen: AppScreen) => {
     setCurrentScreen(screen);
   };
 
   if (!isInitialized) {
-    return <div className="h-screen bg-synk-navy flex items-center justify-center text-white text-3xl font-bold">SYNK.</div>;
+    return <div className="h-screen bg-white flex items-center justify-center text-synk-blue text-4xl font-black italic tracking-tighter">SYNK.</div>;
   }
 
   return (
-    <div className="h-screen w-full bg-synk-offwhite font-sans text-synk-navy selection:bg-synk-pink/30">
-      <div className="max-w-md mx-auto h-full bg-synk-offwhite shadow-2xl relative overflow-hidden">
+    <div className="h-screen w-full bg-white font-sans text-synk-navy selection:bg-synk-blue/10">
+      <div className="max-w-md mx-auto h-full bg-white relative overflow-hidden">
         <AnimatePresence mode="wait">
         <motion.div
           key={currentScreen}
@@ -66,7 +71,7 @@ export default function App() {
             <Closet onNavigate={navigateTo} />
           )}
           {currentScreen === AppScreen.SETTINGS && (
-            <Settings onNavigate={navigateTo} profile={profile} />
+            <Settings onNavigate={navigateTo} profile={profile} onUpdateProfile={handleProfileUpdate} />
           )}
           {currentScreen === AppScreen.STORE && (
             <StoreMode onNavigate={navigateTo} />
