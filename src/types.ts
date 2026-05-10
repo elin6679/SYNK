@@ -31,6 +31,7 @@ export interface ClothingItem {
   category: string;
   color: string;
   texture: string;
+  material?: 'silk' | 'knit' | 'denim' | 'leather' | 'fur' | 'cotton' | 'linen';
   description: string;
   imageUrl?: string;
   createdAt: number;

@@ -116,25 +116,57 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, profile, onUpdat
           </div>
         </section>
 
-        {/* Haptic Test */}
+        {/* Haptic Settings */}
         <section className="space-y-6">
           <div className="flex items-center gap-3 text-synk-blue">
             <div className="p-2 rounded-xl bg-synk-blue/10">
               <Smartphone className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">촉각 확인</h2>
+            <h2 className="text-xl font-bold uppercase tracking-widest text-synk-navy">햅틱 설정</h2>
           </div>
           
-          <AccessibleButton 
-            label="진동 강도 테스트" 
-            variant="secondary"
-            className="w-full"
-            icon={<Smartphone className="w-8 h-8" />}
-            onClick={() => {
-              hapticService.success();
-              speechService.speak('진동이 느껴지시나요?');
-            }}
-          />
+          <div className="bg-synk-offwhite p-6 rounded-[2.5rem] border-2 border-synk-navy/5 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold text-synk-navy">햅틱(진동) 기능</p>
+                <p className="text-xs text-synk-grey">소재 체험을 위한 진동을 켭니다.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  const newState = !hapticService.isEnabled();
+                  hapticService.setEnabled(newState);
+                  setLocalProfile({ ...localProfile }); // Trigger re-render
+                  hapticService.tap();
+                  speechService.speak(`햅틱 기능이 ${newState ? '켜졌습니다' : '꺼졌습니다'}.`);
+                }}
+                className={`w-14 h-8 rounded-full transition-all relative ${hapticService.isEnabled() ? 'bg-synk-blue' : 'bg-synk-grey/30'}`}
+                aria-label="햅틱 토글"
+              >
+                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${hapticService.isEnabled() ? 'right-1' : 'left-1 shadow-sm'}`} />
+              </button>
+            </div>
+
+            <AccessibleButton 
+              label="진동 강도 테스트" 
+              variant="secondary"
+              className="w-full"
+              icon={<Smartphone className="w-8 h-8" />}
+              onClick={() => {
+                if (hapticService.isSupported()) {
+                  hapticService.success();
+                  speechService.speak('진동이 느껴지시나요?');
+                } else {
+                  speechService.speak('이 기기에서는 햅틱 기능을 지원하지 않습니다.');
+                }
+              }}
+            />
+            
+            {!hapticService.isSupported() && (
+              <p className="text-[10px] text-red-500 font-bold text-center">
+                * 이 기기/브라우저에서는 햅틱 기능을 지원하지 않습니다.
+              </p>
+            )}
+          </div>
         </section>
 
         {/* Body Data */}
