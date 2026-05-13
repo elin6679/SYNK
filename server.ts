@@ -2,7 +2,6 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -20,46 +19,7 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", apiKey: !!process.env.GEMINI_API_KEY });
-  });
-
-  app.post("/api/analyze", async (req, res) => {
-    console.log("Analyze request received in server.ts");
-    try {
-      const { image, prompt } = req.body;
-      if (!image || !prompt) {
-        return res.status(400).json({ error: "Missing image or prompt" });
-      }
-
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "GEMINI_API_KEY가 설정되지 않았습니다." });
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: image
-              }
-            }
-          ]
-        }
-      });
-
-      const text = response.text;
-      res.json({ result: text });
-    } catch (error) {
-      console.error("AI Analysis Error:", error);
-      const msg = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: `서버 내부 오류: ${msg}` });
-    }
+    res.json({ status: "ok" });
   });
 
   // Vite middleware for development

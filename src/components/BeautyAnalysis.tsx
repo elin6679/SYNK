@@ -6,6 +6,9 @@ import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { RefreshCw, User, CheckCircle2, X } from 'lucide-react';
 
+import { GoogleGenAI } from '@google/genai';
+import { cameraManager } from '../lib/camera';
+
 interface BeautyAnalysisProps {
   onNavigate: (screen: AppScreen) => void;
   profile: UserProfile | null;
@@ -17,33 +20,59 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, []);
+    let isMounted = true;
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' } // Selfie camera for beauty
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+    const startCamera = async () => {
+      setCameraError(null);
+      if (!isMounted) return;
+
+      try {
+        const mediaStream = await cameraManager.getStream({
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        
+        if (!isMounted) {
+          cameraManager.stopStream();
+          return;
+        }
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          try { await videoRef.current.play(); } catch (e) {}
+        }
+        setStream(mediaStream);
+        speechService.speak('뷰티 카메라가 활성화되었습니다.');
+      } catch (err: any) {
+        console.error('Beauty Camera access error:', err);
+        if (isMounted) {
+          if (err.name === 'NotAllowedError') {
+            setCameraError('카메라 권한이 거부되었습니다.');
+          } else {
+            setCameraError('카메라를 시작할 수 없습니다.');
+          }
+        }
       }
-      setStream(mediaStream);
-      speechService.speak('뷰티분석 모드입니다. 전면 카메라를 활성화했습니다. 얼굴을 화면 중앙에 맞추고 분석 버튼을 누르세요.');
-    } catch (err) {
-      console.error(err);
-      speechService.speak('카메라를 시작할 수 없습니다.');
-    }
-  };
+    };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-  };
+    startCamera();
+
+    return () => {
+      isMounted = false;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        try { videoRef.current.load();} catch (e) {}
+      }
+      cameraManager.stopStream();
+      setStream(null);
+    };
+  }, []);
 
   const analyzeBeauty = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -58,30 +87,38 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
       try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: imageData.split(',')[1],
-            prompt: profile?.settings.detailMode === 'detailed'
-              ? `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
-                 1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적이고 풍부하게 설명해주세요.
-                 2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 상세하게 설명하세요.
-                 3. 전체적인 분위기가 주는 신뢰감이나 느낌을 아주 감성적으로 묘사하세요. 
-                 5문장 이상의 긴 설명으로 친절하게 안내하세요. 한국어로 상세하게 답변하세요.`
-              : `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요. 
-                 전체적인 대칭성과 가장 중요한 보완점 딱 한 가지만 2문장으로 아주 짧고 명확하게 설명해주세요. 
-                 예: "오른쪽 눈썹이 왼쪽보다 약간 높게 그려졌습니다. 전체적으로 깔끔하고 신뢰감을 주는 분위기입니다."와 같이 핵심만 말하세요.`
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Beauty API request failed');
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          throw new Error('GEMINI_API_KEY is not configured.');
         }
 
-        const data = await response.json();
-        const analysisText = data.result;
+        const ai = new GoogleGenAI({ apiKey });
+        const prompt = profile?.settings.detailMode === 'detailed'
+          ? `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
+             1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적이고 풍부하게 설명해주세요.
+             2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 상세하게 설명하세요.
+             3. 전체적인 분위기가 주는 신뢰감이나 느낌을 아주 감성적으로 묘사하세요. 
+             5문장 이상의 긴 설명으로 친절하게 안내하세요. 한국어로 상세하게 답변하세요.`
+          : `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요. 
+             전체적인 대칭성과 가장 중요한 보완점 딱 한 가지만 2문장으로 아주 짧고 명확하게 설명해주세요. 
+             예: "오른쪽 눈썹이 왼쪽보다 약간 높게 그려졌습니다. 전체적으로 깔끔하고 신뢰감을 주는 분위기입니다."와 같이 핵심만 말하세요.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageData.split(',')[1]
+                }
+              }
+            ]
+          }
+        });
+
+        const analysisText = response.text;
         
         if (!analysisText) throw new Error('Empty analysis result');
 
@@ -110,12 +147,31 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
         </button>
       </div>
 
-      <div className="flex-1 w-full bg-white relative overflow-hidden">
+      <div className="flex-1 w-full bg-white relative overflow-hidden flex items-center justify-center bg-synk-offwhite">
+        {!stream && !cameraError && (
+          <div className="flex flex-col items-center gap-6 animate-pulse">
+            <RefreshCw className="w-16 h-16 text-synk-cyan animate-spin" />
+            <p className="text-xl font-bold text-synk-navy/40">카메라 불러오는 중...</p>
+          </div>
+        )}
+
+        {cameraError && (
+          <div className="p-12 text-center space-y-6">
+            <p className="text-2xl font-bold text-red-500">{cameraError}</p>
+            <AccessibleButton 
+              label="카메라 다시 시도" 
+              onClick={() => window.location.reload()} 
+              variant="secondary"
+            />
+          </div>
+        )}
+
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
-          className="w-full h-full object-cover scale-x-[-1]" // Mirror for selfie
+          muted
+          className={`w-full h-full object-cover scale-x-[-1] ${!stream ? 'hidden' : 'block'}`} // Mirror for selfie
         />
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         

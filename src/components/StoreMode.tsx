@@ -6,6 +6,8 @@ import { AppScreen } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { QrCode, X, RefreshCw, Zap } from 'lucide-react';
 
+import { cameraManager } from '../lib/camera';
+
 interface StoreModeProps {
   onNavigate: (screen: AppScreen) => void;
 }
@@ -14,33 +16,55 @@ export const StoreMode: React.FC<StoreModeProps> = ({ onNavigate }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, []);
+    let isMounted = true;
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+    const startCamera = async () => {
+      setCameraError(null);
+      if (!isMounted) return;
+
+      try {
+        const mediaStream = await cameraManager.getStream({
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        
+        if (!isMounted) {
+          cameraManager.stopStream();
+          return;
+        }
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          try { await videoRef.current.play(); } catch (e) {}
+        }
+        setStream(mediaStream);
+        speechService.speak('매장용 카메라가 활성화되었습니다.');
+      } catch (err: any) {
+        console.error('Store Camera access error:', err);
+        if (isMounted) {
+          setCameraError('카메라를 시작할 수 없습니다.');
+        }
       }
-      setStream(mediaStream);
-      speechService.speak('매장 모드입니다. QR 코드나 바코드를 화면에 비춰주세요.');
-    } catch (err) {
-      console.error(err);
-      speechService.speak('카메라를 시작할 수 없습니다.');
-    }
-  };
+    };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-  };
+    startCamera();
+
+    return () => {
+      isMounted = false;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        try { videoRef.current.load(); } catch (e) {}
+      }
+      cameraManager.stopStream();
+      setStream(null);
+    };
+  }, []);
 
   const simulateScan = () => {
     setIsScanning(true);
@@ -66,11 +90,30 @@ export const StoreMode: React.FC<StoreModeProps> = ({ onNavigate }) => {
       </div>
 
       <div className="flex-1 w-full bg-white relative overflow-hidden flex items-center justify-center">
+        {!stream && !cameraError && (
+          <div className="flex flex-col items-center gap-6 animate-pulse">
+            <RefreshCw className="w-16 h-16 text-synk-blue animate-spin" />
+            <p className="text-xl font-bold text-synk-navy/40">카메라 불러오는 중...</p>
+          </div>
+        )}
+
+        {cameraError && (
+          <div className="p-12 text-center space-y-6 z-20">
+            <p className="text-2xl font-bold text-red-500">{cameraError}</p>
+            <AccessibleButton 
+              label="카메라 다시 시도" 
+              onClick={() => window.location.reload()} 
+              variant="secondary"
+            />
+          </div>
+        )}
+
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
-          className="w-full h-full object-cover grayscale opacity-40"
+          muted
+          className={`w-full h-full object-cover grayscale ${!stream ? 'hidden' : 'opacity-40'}`}
         />
         
         {/* QR Scanner Frame */}

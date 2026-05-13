@@ -1,12 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { speechService } from '../lib/speech';
-import { hapticService } from '../lib/haptics';
+import { hapticService, HapticPattern } from '../lib/haptics';
 import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { Camera, X, RefreshCw, Info, Save } from 'lucide-react';
 import { db, auth, OperationType, handleFirestoreError } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+
+import { GoogleGenAI } from '@google/genai';
+import { cameraManager } from '../lib/camera';
 
 interface AnalysisProps {
   onNavigate: (screen: AppScreen) => void;
@@ -19,33 +22,59 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, []);
+    let isMounted = true;
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+    const startCamera = async () => {
+      setCameraError(null);
+      if (!isMounted) return;
+
+      try {
+        const mediaStream = await cameraManager.getStream({
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        
+        if (!isMounted) {
+          cameraManager.stopStream();
+          return;
+        }
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          try { await videoRef.current.play(); } catch (e) {}
+        }
+        setStream(mediaStream);
+        speechService.speak('카메라가 활성화되었습니다.');
+      } catch (err: any) {
+        console.error('Analysis Camera error:', err);
+        if (isMounted) {
+          if (err.name === 'NotAllowedError') {
+            setCameraError('카메라 권한이 거부되었습니다.');
+          } else {
+            setCameraError('카메라를 시작할 수 없습니다.');
+          }
+        }
       }
-      setStream(mediaStream);
-      speechService.speak('카메라를 활성화했습니다. 분석할 물체를 화면 중앙에 두고 화면 아래의 분석 버튼을 누르세요.');
-    } catch (err) {
-      console.error(err);
-      speechService.speak('카메라를 시작할 수 없습니다. 권한을 확인해주세요.');
-    }
-  };
+    };
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-  };
+    startCamera();
+
+    return () => {
+      isMounted = false;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        try { videoRef.current.load(); } catch (e) {}
+      }
+      cameraManager.stopStream();
+      setStream(null);
+    };
+  }, []);
 
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -60,34 +89,59 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
       try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image: imageData.split(',')[1],
-            prompt: profile?.settings.detailMode === 'detailed' 
-              ? `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
-                 시각장애인 사용자를 위해 아주 상세하고 구체적으로, 감성적인 묘사를 곁들여서 설명해주세요.
-                 색상이 실제와 정확하지 않아도 되니, 그 색상이 주는 '느낌'과 '상황(TPO)'을 연결해서 아주 풍부하게 설명해주세요.
-                 예를 들어 "신뢰감을 주는 레드입니다. 이 색상은 중요한 면접이나 자신을 돋보여야 하는 자리에서 침착하면서도 열정적인 존재감을 보여줄 수 있을 것 같습니다. 소재는 부드러운 실크 느낌이며, 전체적으로 우아한 분위기를 풍깁니다."와 같이 아주 길고 자세하게 설명하세요.
-                 질감, 스타일, 어울리는 장소 등을 모두 포함해 5문장 이상의 긴 설명을 제공하세요. 한국어로 따뜻하고 상세하게 대답하세요.`
-              : `이 이미지는 사용자가 입으려는 옷입니다. 시각장애인 사용자를 위해 핵심적인 종류와 색상만 딱 2문장으로 아주 짧게 명확하게 설명해주세요. 
-                 예: "신뢰감을 주는 레드 셔츠입니다. 면접과 같은 중요한 자리에 잘 어울리는 스타일입니다."와 같이 핵심만 말하세요.`
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'API request failed');
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          throw new Error('GEMINI_API_KEY is not configured.');
         }
 
-        const data = await response.json();
-        const analysisText = data.result;
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: {
+            parts: [
+              { text: `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
+                 시각장애인 사용자를 위해 다음 형식에 맞추어 한국어로 친절하고 명확하게 설명해주세요.
+
+                 1. [간단 버전]: 한두 줄 내외의 짧은 문장으로 핵심만 요약합니다. 옷의 대표 색상과 가장 어울리는 핵심 상황만 포함합니다.
+                 2. [상세 버전]: 3~4문장으로 풍부하게 설명합니다. 
+                    - 색상: 색이 주는 느낌과 분위기를 감성적으로 묘사하세요. (예: "신뢰감을 주면서도 열정적인 진한 버건디색")
+                    - 재질: 손끝의 감각을 자극하는 형용사를 사용하여 촉감 중심으로 설명하세요. (예: "매끄러운 실크", "포근한 울")
+                    - 추천 상황: 이 옷이 어떤 자리에서 사용자를 돋보이게 할지 구체적인 장소나 목적(TPO)을 제안하세요.
+
+                 중요: 
+                 - 답변 마지막에 반드시 [MATERIAL:소재명] 형식으로 소재 정보를 포함해주세요. 
+                 - 소재명은 다음 중 하나여야 합니다: silk, knit, denim, leather, fur, cotton, linen.
+                 - 모든 설명은 TTS(음성 출력)를 고려하여 문장 끝맺음을 확실히 하세요.
+
+                 출력 형식:
+                 [간단 버전]
+                 (요약 내용)
+
+                 [상세 버전]
+                 - 색상: (설명)
+                 - 재질: (설명)
+                 - 추천 상황: (설명)
+
+                 [MATERIAL:소재명]` },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageData.split(',')[1]
+                }
+              }
+            ]
+          }
+        });
+
+        const analysisText = response.text;
         
         if (!analysisText) throw new Error('Empty analysis result');
 
         setResult(analysisText);
-        speechService.speak(analysisText);
+        
+        // Clean speech text
+        const speechText = analysisText.replace(/\[MATERIAL:.*?\]/, '').trim();
+        speechService.speak(speechText);
         hapticService.success();
       } catch (err) {
         console.error(err);
@@ -99,38 +153,75 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
     }
   };
 
-  // Rubbing screen interaction (Mock)
+  const parseResult = (text: string) => {
+    const materialMatch = text.match(/\[MATERIAL:(.*?)\]/);
+    const material = materialMatch ? materialMatch[1].toLowerCase() : 'cotton';
+    
+    let cleanText = text.replace(/\[MATERIAL:.*?\]/, '').trim();
+    
+    const simpleParts = cleanText.split('[상세 버전]');
+    const simple = simpleParts[0].replace('[간단 버전]', '').trim();
+    const detailed = simpleParts[1] ? simpleParts[1].trim() : '';
+
+    return { simple, detailed, material };
+  };
+
+  // Rubbing screen interaction
   const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
     if (!result) return;
-    // Debounce or rate-limit for actual implementation
-    // For now, simulate texture haptics based on movement speed or position
-    hapticService.texture(Math.random() > 0.7);
+    
+    // Extract material for real-time haptic feedback
+    const materialMatch = result.match(/\[MATERIAL:(.*?)\]/);
+    const material = materialMatch ? materialMatch[1].toLowerCase() : 'cotton';
+    
+    const pattern = (MATERIAL_MAP as any)[material]?.pattern || HapticPattern.COTTON;
+    hapticService.vibrate(pattern);
   };
 
   const saveToCloset = async () => {
-    if (!result || !auth.currentUser) {
-      if (!auth.currentUser) speechService.speak('로그인이 필요한 기능입니다.');
-      return;
-    }
+    if (!result) return;
 
-    const path = `users/${auth.currentUser.uid}/closet`;
     try {
       hapticService.tap();
-      await addDoc(collection(db, path), {
-        name: '분석된 의류',
-        category: '패션',
-        color: '분석됨',
-        texture: '분석됨',
-        description: result,
-        ownerId: auth.currentUser.uid,
+      
+      // Extract material
+      const materialMatch = result.match(/\[MATERIAL:(.*?)\]/);
+      const materialKey = materialMatch ? materialMatch[1].toLowerCase() : 'cotton';
+      const cleanDescription = result.replace(/\[MATERIAL:.*?\]/, '').trim();
+
+      const newItem = {
+        id: Date.now().toString(),
+        name: 'AI 감각 번역 의류',
+        category: 'AI Analysis',
+        color: 'Auto',
+        texture: 'Auto',
+        material: materialKey as any,
+        description: cleanDescription,
+        imageUrl: canvasRef.current?.toDataURL('image/jpeg'),
         createdAt: Date.now()
-      });
+      };
+
+      const saved = localStorage.getItem('synk_touch_closet');
+      const items = saved ? JSON.parse(saved) : [];
+      localStorage.setItem('synk_touch_closet', JSON.stringify([newItem, ...items]));
+      
       hapticService.success();
-      speechService.speak('옷장에 저장되었습니다.');
+      speechService.speak('옷장에 저장되었습니다. 이제 옷장에서 직접 만져보실 수 있습니다.');
       onNavigate(AppScreen.CLOSET);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
+      console.error('Save error:', error);
+      speechService.speak('저장 중 오류가 발생했습니다.');
     }
+  };
+
+  const MATERIAL_MAP = {
+    silk: { pattern: HapticPattern.SILK },
+    knit: { pattern: HapticPattern.KNIT },
+    denim: { pattern: HapticPattern.DENIM },
+    leather: { pattern: HapticPattern.LEATHER },
+    fur: { pattern: HapticPattern.FUR },
+    cotton: { pattern: HapticPattern.COTTON },
+    linen: { pattern: HapticPattern.LINEN },
   };
 
   return (
@@ -149,15 +240,34 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
       </div>
 
       <div 
-        className="flex-1 w-full bg-white relative overflow-hidden"
+        className="flex-1 w-full bg-white relative overflow-hidden flex items-center justify-center bg-synk-offwhite"
         onTouchMove={handleTouchMove}
         onMouseMove={handleTouchMove}
       >
+        {!stream && !cameraError && (
+          <div className="flex flex-col items-center gap-6 animate-pulse">
+            <RefreshCw className="w-16 h-16 text-synk-blue animate-spin" />
+            <p className="text-xl font-bold text-synk-navy/40">카메라 불러오는 중...</p>
+          </div>
+        )}
+
+        {cameraError && (
+          <div className="p-12 text-center space-y-6">
+            <p className="text-2xl font-bold text-red-500">{cameraError}</p>
+            <AccessibleButton 
+              label="카메라 다시 시도" 
+              onClick={() => window.location.reload()} 
+              variant="secondary"
+            />
+          </div>
+        )}
+
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
-          className="w-full h-full object-cover"
+          muted
+          className={`w-full h-full object-cover ${!stream ? 'hidden' : 'block'}`}
         />
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         
@@ -172,11 +282,47 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
           <motion.div 
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            className="absolute inset-0 bg-white p-12 overflow-y-auto text-synk-navy z-40"
+            className="absolute inset-x-0 bottom-0 top-0 bg-white p-12 overflow-y-auto text-synk-navy z-40 rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.1)]"
+            onTouchMove={handleTouchMove}
+            onMouseMove={handleTouchMove}
+            onPointerUp={() => hapticService.stop()}
+            onPointerLeave={() => hapticService.stop()}
           >
-            <div className="flex flex-col gap-10 pb-32 pt-20">
-              <h2 className="text-5xl font-black tracking-tighter border-b-4 border-synk-blue/10 pb-6 text-synk-blue">분석 결과</h2>
-              <p className="text-2xl leading-relaxed font-medium text-synk-navy/90">{result}</p>
+            <div className="flex flex-col gap-10 pb-32 pt-16">
+              <div className="flex items-center justify-between border-b-4 border-synk-blue/10 pb-6">
+                <h2 className="text-5xl font-black tracking-tighter text-synk-blue">감각 번역 결과</h2>
+                <div className="px-5 py-2 rounded-2xl bg-synk-blue/10 text-synk-blue font-bold text-xl uppercase">
+                  {parseResult(result).material}
+                </div>
+              </div>
+
+              <div className="bg-synk-blue/5 p-6 rounded-3xl text-synk-blue font-bold text-center italic text-xl">
+                "이 화면을 문질러 소재의 촉감을 느껴보세요"
+              </div>
+
+              {/* 간단 버전 */}
+              <div className="space-y-4">
+                <div className="inline-block px-4 py-1 rounded-full bg-synk-navy text-white text-base font-bold tracking-widest uppercase">간단 버전</div>
+                <p className="text-4xl leading-tight font-black text-synk-navy tracking-tight">
+                  {parseResult(result).simple}
+                </p>
+              </div>
+
+              {/* 상세 버전 */}
+              <div className="space-y-6 pt-6 border-t-2 border-synk-offwhite">
+                <div className="inline-block px-4 py-1 rounded-full bg-synk-blue text-white text-base font-bold tracking-widest uppercase">상세 버전</div>
+                <div className="space-y-8">
+                  {parseResult(result).detailed.split('\n').filter(line => line.trim()).map((line, idx) => {
+                    const [label, content] = line.startsWith('-') ? line.substring(1).split(':') : [null, line];
+                    return (
+                      <div key={idx} className="flex flex-col gap-2">
+                        {label && <span className="text-synk-blue font-black text-2xl tracking-tighter">{label.trim()}</span>}
+                        <p className="text-2xl leading-relaxed font-medium text-synk-navy/80">{content?.trim() || line}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 gap-4 mt-8">
                 <AccessibleButton 

@@ -109,13 +109,22 @@ export const Closet: React.FC<ClosetProps> = ({ onNavigate }) => {
           </button>
           <h1 className="text-4xl font-display font-black tracking-tighter uppercase leading-none">Touch Closet</h1>
         </div>
-        <button 
-          onClick={() => setIsUploading(true)}
-          className="p-4 rounded-3xl bg-synk-blue text-white shadow-xl shadow-synk-blue/20 active:scale-95 transition-all"
-          aria-label="옷 추가하기"
-        >
-          <Plus className="w-8 h-8" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => onNavigate(AppScreen.ANALYSIS)}
+            className="p-4 rounded-3xl bg-synk-cyan text-white shadow-xl shadow-synk-cyan/20 active:scale-95 transition-all"
+            aria-label="AI 카메라 분석"
+          >
+            <Camera className="w-8 h-8" />
+          </button>
+          <button 
+            onClick={() => setIsUploading(true)}
+            className="p-4 rounded-3xl bg-synk-blue text-white shadow-xl shadow-synk-blue/20 active:scale-95 transition-all"
+            aria-label="옷 수동 추가"
+          >
+            <Plus className="w-8 h-8" />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto px-6 pb-40 custom-scrollbar">

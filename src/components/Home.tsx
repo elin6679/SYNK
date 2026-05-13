@@ -11,7 +11,7 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   const menuItems = [
-    { id: AppScreen.ANALYSIS, label: '카메라 분석', hint: '주변의 옷이나 색상을 분석합니다', icon: <Camera className="w-10 h-10" />, color: 'bg-synk-blue' },
+    { id: AppScreen.ANALYSIS, label: '감각 번역', hint: '주변의 옷이나 색상을 분석하고 촉각으로 번역합니다', icon: <Camera className="w-10 h-10" />, color: 'bg-synk-blue' },
     { id: AppScreen.BEAUTY, label: '뷰티 분석', hint: '메이크업 대칭과 얼굴 고민을 해결합니다', icon: <Sparkles className="w-10 h-10" />, color: 'bg-synk-cyan' },
     { id: AppScreen.CLOSET, label: '내 옷장', hint: '저장된 나의 옷들을 확인하고 코디합니다', icon: <Shirt className="w-10 h-10" />, color: 'bg-synk-navy' },
     { id: AppScreen.STORE, label: '매장 모드', hint: 'QR 코드와 바코드를 스캔하여 정보를 찾습니다', icon: <MapPin className="w-10 h-10" />, color: 'bg-synk-grey' },
