@@ -15,9 +15,24 @@
   --color-synk-lavender: #818CF8;
   --color-synk-peach: #FB923C;
   --color-synk-primary: #0052FF;
+  --color-neon-green: #00FF94;
+  --color-cyber-blue: #00F0FF;
 }
 
 @layer utilities {
+  .tech-border {
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+  }
+
+  .neon-glow-green {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 148, 0.6));
+  }
+
+  .neon-glow-blue {
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6));
+  }
+
   .text-balloon {
     color: #FFFFFF;
     text-shadow: 
@@ -49,13 +64,14 @@
   }
 
   @keyframes scan {
-    0% { transform: translateY(-160px); opacity: 0; }
-    50% { opacity: 1; }
-    100% { transform: translateY(160px); opacity: 0; }
+    0% { transform: translateY(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(100%); opacity: 0; }
   }
 
   .animate-scan-line {
-    animation: scan 2s ease-in-out infinite;
+    animation: scan 2s linear infinite;
   }
 }
 

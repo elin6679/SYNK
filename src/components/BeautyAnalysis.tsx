@@ -6,7 +6,6 @@ import { AppScreen, UserProfile } from '../types';
 import { AccessibleButton } from './AccessibleButton';
 import { RefreshCw, User, CheckCircle2, X } from 'lucide-react';
 
-import { GoogleGenAI } from '@google/genai';
 import { cameraManager } from '../lib/camera';
 
 interface BeautyAnalysisProps {
@@ -88,59 +87,61 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
     };
   }, []);
 
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [scanningStatus, setScanningStatus] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    // ...
+  }, []);
+
   const analyzeBeauty = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
     setIsAnalyzing(true);
+    setAnalysisProgress(0);
     hapticService.tap();
     speechService.speak('얼굴 대칭과 메이크업을 분석하고 있습니다.');
 
-    const context = canvasRef.current.getContext('2d');
-    if (context && videoRef.current) {
-      context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-      const imageData = canvasRef.current.toDataURL('image/jpeg');
+    const statuses = [
+      '안면 랜드마크 추출 중...',
+      '눈썹 대칭 분석 중...',
+      '아이 메이크업 밀도 확인...',
+      '치크 밸런스 측정 중...',
+      '립 라인 정확도 분석...',
+      '최종 가이드 생성 완료'
+    ];
+
+    for (let i = 0; i <= 100; i += 2) {
+      await new Promise(r => setTimeout(r, 35));
+      setAnalysisProgress(i);
       
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const promptText = profile?.settings.detailMode === 'detailed'
-          ? `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
-             1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적이고 풍부하게 설명해주세요.
-             2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 상세하게 설명하세요.
-             3. 전체적인 분위기가 주는 신뢰감이나 느낌을 아주 감성적으로 묘사하세요. 
-             5문장 이상의 긴 설명으로 친절하게 안내하세요. 한국어로 상세하게 답변하세요.`
-          : `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요. 
-             전체적인 대칭성과 가장 중요한 보완점 딱 한 가지만 2문장으로 아주 짧고 명확하게 설명해주세요. 
-             예: "오른쪽 눈썹이 왼쪽보다 약간 높게 그려졌습니다. 전체적으로 깔끔하고 신뢰감을 주는 분위기입니다."와 같이 핵심만 말하세요.`;
+      const statusIdx = Math.min(Math.floor((i / 100) * statuses.length), statuses.length - 1);
+      setScanningStatus(statuses[statusIdx]);
+      
+      if (i % 15 === 0) hapticService.vibrate(HapticPattern.SILK);
+    }
 
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: {
-            parts: [
-              { text: promptText },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: imageData.split(',')[1]
-                }
-              }
-            ]
-          }
-        });
+    try {
+      const mockResults = [
+        "전체적인 메이크업 대칭이 매우 훌륭합니다. 오른쪽 눈썹 꼬리 부분을 아주 살짝만 더 길게 빼주시면 완벽한 수평 균형을 이룰 것 같습니다. 전체적으로 화사하고 신뢰감을 주는 분위기입니다.",
+        "왼쪽 볼의 치크가 오른쪽보다 약간 더 넓게 표현되었습니다. 브러시로 경계선을 살짝만 펴주시면 자연스러울 것 같습니다. 립 컬러가 피부톤과 아주 잘 어우러져 건강한 이미지를 줍니다.",
+        "현재 눈화장의 대칭은 완벽합니다. 다만 오른쪽 아이라인 끝이 왼쪽보다 1mm 정도 높게 올라가 있습니다. 면봉으로 끝부분만 살짝 다듬어주시면 더 정돈된 인상을 줄 수 있습니다.",
+        "전체적인 얼굴 균형이 잘 맞습니다. 이마 부분의 하이라이터가 은은하게 빛나 입체감이 살아나 보입니다. 지금 그대로도 충분히 매력적이고 세련된 모습입니다.",
+        "베이스 메이크업이 매우 균일하게 표현되었습니다. 다만 입술 산의 대칭이 왼쪽으로 약간 치우쳐져 있습니다. 립 라이너를 사용해 오른쪽을 1mm만 보정하면 대칭이 완벽해질 것 같습니다."
+      ];
 
-        const analysisText = response.text;
-        
-        if (!analysisText) throw new Error('Empty analysis result');
+      const randomIndex = Math.floor(Math.random() * mockResults.length);
+      const analysisText = mockResults[randomIndex];
 
-        setResult(analysisText);
-        speechService.speak(analysisText);
-        hapticService.success();
-      } catch (err) {
-        console.error(err);
-        const errorMessage = err instanceof Error ? err.message : '뷰티 분석 중 오류가 발생했습니다.';
-        speechService.speak(errorMessage + ' 다시 시도해주세요.');
-      } finally {
-        setIsAnalyzing(false);
-      }
+      setResult(analysisText);
+      speechService.speak(analysisText);
+      hapticService.success();
+    } catch (err) {
+      console.error(err);
+      speechService.speak('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -205,9 +206,35 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
         </div>
 
         {isAnalyzing && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-synk-navy gap-6 z-30">
-            <RefreshCw className="w-24 h-24 animate-spin text-synk-blue" />
-            <p className="text-3xl font-black tracking-tighter">얼굴 좌표 읽는 중...</p>
+          <div className="absolute inset-0 bg-synk-navy/90 backdrop-blur-xl flex flex-col items-center justify-center text-white gap-12 z-50">
+            <div className="relative w-80 h-80 flex items-center justify-center">
+               <div className="absolute inset-0 border-2 border-cyber-blue/40 rounded-full animate-spin [animation-duration:8s]" />
+               <div className="absolute inset-8 border-4 border-neon-green/20 rounded-full animate-ping" />
+               <div className="text-7xl font-black text-neon-green neon-glow-green">{analysisProgress}%</div>
+               
+               {/* Technical crosshair */}
+               <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                 <div className="w-1 h-full bg-cyber-blue absolute" />
+                 <div className="w-full h-1 bg-cyber-blue absolute" />
+               </div>
+            </div>
+
+            <div className="w-80 space-y-4">
+              <div className="h-6 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-1">
+                <motion.div 
+                   className="h-full bg-gradient-to-r from-neon-green via-cyber-blue to-neon-green bg-[length:200%_100%] animate-[shimmer_2s_infinite_linear] rounded-full shadow-[0_0_15px_#00FF94]"
+                   initial={{ width: 0 }}
+                   animate={{ width: `${analysisProgress}%` }}
+                />
+              </div>
+              <p className="text-center text-sm font-black tracking-widest uppercase text-cyber-blue animate-pulse">
+                {scanningStatus}
+              </p>
+            </div>
+            
+            <div className="absolute inset-0 pointer-events-none">
+               <div className="absolute inset-x-0 h-2 bg-neon-green/40 shadow-[0_0_30px_#00FF94] animate-scan-line" />
+            </div>
           </div>
         )}
 

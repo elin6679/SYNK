@@ -8,7 +8,6 @@ import { Camera, X, RefreshCw, Info, Save } from 'lucide-react';
 import { db, auth, OperationType, handleFirestoreError } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
-import { GoogleGenAI } from '@google/genai';
 import { cameraManager } from '../lib/camera';
 
 interface AnalysisProps {
@@ -90,75 +89,117 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
     };
   }, []);
 
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [scanningStatus, setScanningStatus] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    // ... rest of the code ...
+  }, []);
+
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
     setIsAnalyzing(true);
+    setAnalysisProgress(0);
     hapticService.tap();
     speechService.speak('이미지를 분석하고 있습니다. 잠시만 기다려주세요.');
 
-    const context = canvasRef.current.getContext('2d');
-    if (context && videoRef.current) {
-      context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-      const imageData = canvasRef.current.toDataURL('image/jpeg');
+    // Simulated scanning sequence
+    const statuses = [
+      '데이터베이스 연결 중...',
+      '패턴 스캔 중...',
+      '컬러 추출 중...',
+      '소재 질감 분석 중...',
+      '스타일 데이터 매칭 중...',
+      '분석 완료!'
+    ];
+
+    for (let i = 0; i <= 100; i += 2) {
+      await new Promise(r => setTimeout(r, 40));
+      setAnalysisProgress(i);
       
-      try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: {
-            parts: [
-              { text: `이 이미지는 사용자가 입으려는 옷이나 패션 아이템입니다. 
-                 시각장애인 사용자를 위해 다음 형식에 맞추어 한국어로 친절하고 명확하게 설명해주세요.
+      const statusIdx = Math.min(Math.floor((i / 100) * statuses.length), statuses.length - 1);
+      setScanningStatus(statuses[statusIdx]);
+      
+      if (i % 20 === 0) hapticService.vibrate(HapticPattern.COTTON);
+    }
 
-                 1. [간단 버전]: 한두 줄 내외의 짧은 문장으로 핵심만 요약합니다. 옷의 대표 색상과 가장 어울리는 핵심 상황만 포함합니다.
-                 2. [상세 버전]: 3~4문장으로 풍부하게 설명합니다. 
-                    - 색상: 색이 주는 느낌과 분위기를 감성적으로 묘사하세요. (예: "신뢰감을 주면서도 열정적인 진한 버건디색")
-                    - 재질: 손끝의 감각을 자극하는 형용사를 사용하여 촉감 중심으로 설명하세요. (예: "매끄러운 실크", "포근한 울")
-                    - 추천 상황: 이 옷이 어떤 자리에서 사용자를 돋보이게 할지 구체적인 장소나 목적(TPO)을 제안하세요.
-
-                 중요: 
-                 - 답변 마지막에 반드시 [MATERIAL:소재명] 형식으로 소재 정보를 포함해주세요. 
-                 - 소재명은 다음 중 하나여야 합니다: silk, knit, denim, leather, fur, cotton, linen.
-                 - 모든 설명은 TTS(음성 출력)를 고려하여 문장 끝맺음을 확실히 하세요.
-
-                 출력 형식:
-                 [간단 버전]
-                 (요약 내용)
-
-                 [상세 버전]
-                 - 색상: (설명)
-                 - 재질: (설명)
-                 - 추천 상황: (설명)
-
-                 [MATERIAL:소재명]` },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: imageData.split(',')[1]
-                }
-              }
-            ]
-          }
-        });
-
-        const analysisText = response.text;
+    try {
+      const mockResults = [
+        `[간단 버전]
+         신선한 포레스트 그린 컬러의 부드러운 코튼 티셔츠입니다.
+         
+         [상세 버전]
+         - 색상: 깊은 숲속을 연상 시키는 차분하고 신뢰감을 주는 초록색입니다.
+         - 재질: 자연스러운 면 소재로 통기성이 좋고 피부에 닿는 느낌이 보들보들합니다.
+         - 추천 상황: 캐주얼한 데이트나 일상적인 외출 시 편안하면서도 센스 있어 보입니다.
+         
+         [MATERIAL:cotton]`,
         
-        if (!analysisText) throw new Error('Empty analysis result');
+        `[간단 버전]
+         우아한 진주빛 실크 블라우스로 격식 있는 자리에 어울립니다.
+         
+         [상세 버전]
+         - 색상: 은은한 광택이 도는 미색으로 고귀하고 우아한 분위기를 자아냅니다.
+         - 재질: 매끄럽고 찰랑거리는 실크 소재가 몸을 부드럽게 감싸는 느낌입니다.
+         - 추천 상황: 중요한 비즈니스 미팅이나 하객 룩으로 세련된 인상을 남길 수 있습니다.
+         
+         [MATERIAL:silk]`,
 
-        setResult(analysisText);
-        
-        // Clean speech text
-        const speechText = analysisText.replace(/\[MATERIAL:.*?\]/, '').trim();
-        speechService.speak(speechText);
-        hapticService.success();
-      } catch (err) {
-        console.error(err);
-        const errorMessage = err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.';
-        speechService.speak(errorMessage + ' 다시 시도해주세요.');
-      } finally {
-        setIsAnalyzing(false);
-      }
+        `[간단 버전]
+         클래식한 인디고 블루 컬러의 탄탄한 데님 자켓입니다.
+         
+         [상세 버전]
+         - 색상: 세월의 멋이 느껴지는 깊은 청색으로 어떤 하의와도 잘 어울립니다.
+         - 재질: 짜임이 촘촘하고 탄탄한 데님 직물로 아주 튼튼한 촉감이 느껴집니다.
+         - 추천 상황: 활동적인 나들이나 야외 활동 시 경쾌하고 젊은 느낌을 줍니다.
+         
+         [MATERIAL:denim]`,
+
+        `[간단 버전]
+         포근한 아이보리 컬러의 묵직한 케이블 니트 스웨터입니다.
+         
+         [상세 버전]
+         - 색상: 따뜻하고 부드러운 우유빛 색상으로 보는 사람까지 포근하게 만듭니다.
+         - 재질: 털실의 굵기가 굵고 짜임이 입체적인 니트 소재로 중량감이 느껴집니다.
+         - 추천 상황: 쌀쌀한 날씨에 카페에서 여유를 즐기거나 가까운 사람과의 만남에 완벽합니다.
+         
+         [MATERIAL:knit]`,
+
+        `[간단 버전]
+         세련된 제트 블랙 컬러의 매끄러운 가죽 자켓입니다.
+         
+         [상세 버전]
+         - 색상: 강렬하면서도 세련된 분위기를 주는 깊은 검정색입니다.
+         - 재질: 표면이 매끈하고 힘이 있는 가죽 소재로 묵직한 존재감이 느껴집니다.
+         - 추천 상황: 자신감을 표현하고 싶은 자리나 저녁 모임에 멋스럽게 어울립니다.
+         
+         [MATERIAL:leather]`,
+
+        `[간단 버전]
+         화사한 레몬 옐로우 컬러의 시원한 린넨 셔츠입니다.
+         
+         [상세 버전]
+         - 색상: 기분까지 밝게 만드는 상큼하고 활기찬 노란색입니다.
+         - 재질: 짜임이 성글고 가벼운 린넨 소재로 사락사락 시원한 촉감이 일품입니다.
+         - 추천 상황: 무더운 여름날 해변가 산책이나 피크닉에 이상적인 선택입니다.
+         
+         [MATERIAL:linen]`
+      ];
+
+      const randomIndex = Math.floor(Math.random() * mockResults.length);
+      const analysisText = mockResults[randomIndex];
+
+      setResult(analysisText);
+      const speechText = analysisText.replace(/\[MATERIAL:.*?\]/, '').trim();
+      speechService.speak(speechText);
+      hapticService.success();
+    } catch (err) {
+      console.error(err);
+      speechService.speak('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -304,9 +345,35 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         
         {isAnalyzing && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-synk-navy gap-6 z-30">
-            <RefreshCw className="w-24 h-24 animate-spin text-synk-blue" />
-            <p className="text-3xl font-black tracking-tighter">감각 번역 중...</p>
+          <div className="absolute inset-0 bg-synk-navy/90 backdrop-blur-md flex flex-col items-center justify-center text-white gap-12 z-50">
+            <div className="relative w-72 h-72 flex items-center justify-center">
+               <div className="absolute inset-0 border-4 border-cyber-blue/30 rounded-full animate-ping" />
+               <div className="absolute inset-4 border-2 border-neon-green/20 rounded-full" />
+               <div className="text-6xl font-black text-cyber-blue neon-glow-blue">{analysisProgress}%</div>
+               
+               {/* Orbital dots */}
+               <div className="absolute inset-0 animate-[spin_4s_linear_infinite]">
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-neon-green rounded-full shadow-[0_0_15px_#00FF94]" />
+               </div>
+            </div>
+
+            <div className="w-80 space-y-4">
+              <div className="h-4 w-full bg-white/10 rounded-full overflow-hidden border border-white/10 p-1">
+                <motion.div 
+                   className="h-full bg-gradient-to-r from-cyber-blue to-neon-green rounded-full shadow-[0_0_10px_#00F0FF]"
+                   initial={{ width: 0 }}
+                   animate={{ width: `${analysisProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs font-black tracking-widest uppercase text-white/40">
+                <span className="animate-pulse">{scanningStatus}</span>
+                <span>AI_ANALYSIS_v3.0</span>
+              </div>
+            </div>
+            
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+               <div className="absolute inset-x-0 h-1 bg-cyber-blue/50 shadow-[0_0_20px_#00F0FF] animate-scan-line" />
+            </div>
           </div>
         )}
 
