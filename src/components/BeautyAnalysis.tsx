@@ -101,13 +101,8 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
       try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error('GEMINI_API_KEY is not configured.');
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = profile?.settings.detailMode === 'detailed'
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const promptText = profile?.settings.detailMode === 'detailed'
           ? `사용자의 얼굴 이미지를 분석하여 메이크업 가이드를 제공하세요.
              1. 메이크업의 대칭성과 상태를 분석하여 아주 구체적이고 풍부하게 설명해주세요.
              2. 특히 위치 가이드를 줄 때, "오른쪽 아이라인이 왼쪽보다 약 2mm 더 길게 그려졌습니다. 끝부분을 살짝 지우거나 왼쪽을 조금 더 채우면 더 완벽해질 것 같아요"와 같이 mm 단위로 비유하여 상세하게 설명하세요.
@@ -121,7 +116,7 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
           model: "gemini-3-flash-preview",
           contents: {
             parts: [
-              { text: prompt },
+              { text: promptText },
               {
                 inlineData: {
                   mimeType: "image/jpeg",

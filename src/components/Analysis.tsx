@@ -103,12 +103,7 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
       try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error('GEMINI_API_KEY is not configured.');
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
           contents: {
