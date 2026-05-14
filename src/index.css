@@ -15,11 +15,22 @@
   --color-synk-lavender: #818CF8;
   --color-synk-peach: #FB923C;
   --color-synk-primary: #0052FF;
+  --color-beauty-pink: #FF85A1;
+  --color-beauty-beige: #FDF4F2;
+  --color-beauty-gold: #D4AF37;
   --color-neon-green: #00FF94;
   --color-cyber-blue: #00F0FF;
 }
 
 @layer utilities {
+  .beauty-shadow {
+    box-shadow: 0 10px 30px -5px rgba(255, 133, 161, 0.2);
+  }
+
+  .beauty-glow {
+    filter: drop-shadow(0 0 12px rgba(255, 133, 161, 0.4));
+  }
+
   .tech-border {
     border: 1px solid rgba(0, 240, 255, 0.3);
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);

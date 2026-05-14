@@ -79,6 +79,27 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </div>
         </section>
       </div>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 inset-x-0 bg-white/80 backdrop-blur-xl border-t border-synk-navy/5 px-8 h-24 flex items-center justify-between pb-4 z-50">
+        {[
+          { icon: <User className="w-8 h-8" />, label: 'Home', screen: AppScreen.HOME },
+          { icon: <Sparkles className="w-8 h-8" />, label: 'Beauty', screen: AppScreen.BEAUTY },
+          { icon: <Shirt className="w-8 h-8" />, label: 'Closet', screen: AppScreen.CLOSET },
+          { icon: <Settings className="w-8 h-8" />, label: 'Settings', screen: AppScreen.SETTINGS },
+        ].map((item, idx) => (
+          <button
+            key={idx}
+            onClick={() => onNavigate(item.screen)}
+            className="flex flex-col items-center justify-center gap-1 text-synk-navy/40 hover:text-synk-blue transition-colors px-4"
+          >
+            <div className={item.screen === AppScreen.HOME ? 'text-synk-blue' : ''}>
+              {item.icon}
+            </div>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${item.screen === AppScreen.HOME ? 'text-synk-blue' : ''}`}>{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };
