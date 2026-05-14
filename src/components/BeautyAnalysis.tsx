@@ -22,6 +22,8 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
+  const [isSimulated, setIsSimulated] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -43,19 +45,31 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
           return;
         }
 
+        const isSim = (mediaStream as any).isSimulated;
+        setIsSimulated(!!isSim);
+
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           try { await videoRef.current.play(); } catch (e) {}
         }
         setStream(mediaStream);
-        speechService.speak('뷰티 카메라가 활성화되었습니다.');
+
+        if (isSim) {
+          speechService.speak('뷰티 카메라 하드웨어가 준비 중입니다. 시뮬레이션 모드를 시작합니다.');
+        } else {
+          speechService.speak('뷰티 카메라가 활성화되었습니다.');
+        }
       } catch (err: any) {
         console.error('Beauty Camera access error:', err);
         if (isMounted) {
           if (err.name === 'NotAllowedError') {
-            setCameraError('카메라 권한이 거부되었습니다.');
+            const msg = '뷰티 카메라 권한이 거부되었습니다. 설정에서 승인해주세요.';
+            setCameraError(msg);
+            speechService.speak(msg);
           } else {
-            setCameraError('카메라를 시작할 수 없습니다.');
+            const msg = '카메라 초기화에 실패했습니다. 다른 앱을 종료한 후 다시 시도해주세요.';
+            setCameraError(msg);
+            speechService.speak(msg);
           }
         }
       }
@@ -82,7 +96,7 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
     speechService.speak('얼굴 대칭과 메이크업을 분석하고 있습니다.');
 
     const context = canvasRef.current.getContext('2d');
-    if (context) {
+    if (context && videoRef.current) {
       context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
@@ -166,12 +180,24 @@ export const BeautyAnalysis: React.FC<BeautyAnalysisProps> = ({ onNavigate, prof
           </div>
         )}
 
+        {isSimulated && (
+          <div className="absolute inset-0 bg-synk-offwhite flex flex-col items-center justify-center gap-8 overflow-hidden">
+            <div className="w-full h-full opacity-10 relative">
+               <div className="w-full h-full bg-[radial-gradient(circle,rgba(0,0,0,0.4)_1px,transparent_1px)] bg-[length:40px_40px]" />
+            </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-synk-blue/40">
+               <User className="w-40 h-40 stroke-[0.5px] animate-pulse" />
+               <p className="text-2xl font-black tracking-widest uppercase">Mirror Simulation</p>
+            </div>
+          </div>
+        )}
+
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
           muted
-          className={`w-full h-full object-cover scale-x-[-1] ${!stream ? 'hidden' : 'block'}`} // Mirror for selfie
+          className={`w-full h-full object-cover scale-x-[-1] ${(isSimulated || !stream) ? 'hidden' : 'block'}`} // Mirror for selfie
         />
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         

@@ -24,6 +24,8 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
+  const [isSimulated, setIsSimulated] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -45,19 +47,31 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
           return;
         }
 
+        const isSim = (mediaStream as any).isSimulated;
+        setIsSimulated(!!isSim);
+
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           try { await videoRef.current.play(); } catch (e) {}
         }
         setStream(mediaStream);
-        speechService.speak('카메라가 활성화되었습니다.');
+
+        if (isSim) {
+          speechService.speak('카메라 하드웨어 준비 중입니다. 시뮬레이션 모드를 시작합니다.');
+        } else {
+          speechService.speak('카메라가 활성화되었습니다.');
+        }
       } catch (err: any) {
         console.error('Analysis Camera error:', err);
         if (isMounted) {
           if (err.name === 'NotAllowedError') {
-            setCameraError('카메라 권한이 거부되었습니다.');
+            const msg = '카메라 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요.';
+            setCameraError(msg);
+            speechService.speak(msg);
           } else {
-            setCameraError('카메라를 시작할 수 없습니다.');
+            const msg = '카메라를 시작할 수 없습니다. 다른 앱에서 카메라를 사용 중인지 확인해주세요.';
+            setCameraError(msg);
+            speechService.speak(msg);
           }
         }
       }
@@ -84,7 +98,7 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
     speechService.speak('이미지를 분석하고 있습니다. 잠시만 기다려주세요.');
 
     const context = canvasRef.current.getContext('2d');
-    if (context) {
+    if (context && videoRef.current) {
       context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
       const imageData = canvasRef.current.toDataURL('image/jpeg');
       
@@ -159,9 +173,19 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
     
     let cleanText = text.replace(/\[MATERIAL:.*?\]/, '').trim();
     
-    const simpleParts = cleanText.split('[상세 버전]');
-    const simple = simpleParts[0].replace('[간단 버전]', '').trim();
-    const detailed = simpleParts[1] ? simpleParts[1].trim() : '';
+    // Improved parsing for Simple vs Detailed sections
+    let simple = '';
+    let detailed = '';
+
+    if (cleanText.includes('[간단 버전]') && cleanText.includes('[상세 버전]')) {
+      const parts = cleanText.split('[상세 버전]');
+      simple = parts[0].replace('[간단 버전]', '').trim();
+      detailed = parts[1].trim();
+    } else {
+      // Fallback if formatting is slightly off
+      simple = cleanText.split('\n')[0];
+      detailed = cleanText;
+    }
 
     return { simple, detailed, material };
   };
@@ -262,12 +286,25 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
           </div>
         )}
 
+        {isSimulated && (
+          <div className="absolute inset-0 bg-synk-navy flex flex-col items-center justify-center gap-8 overflow-hidden">
+            <div className="w-full h-full opacity-20 relative">
+               <div className="absolute inset-x-0 h-4 bg-white/20 animate-scan-line top-1/2" />
+               <div className="w-full h-full bg-[radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[length:20px_20px]" />
+            </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-white/50">
+               <Camera className="w-24 h-24 stroke-[1px] animate-pulse" />
+               <p className="text-xl font-medium tracking-widest uppercase">Simulated Viewport</p>
+            </div>
+          </div>
+        )}
+
         <video 
           ref={videoRef}
           autoPlay 
           playsInline 
           muted
-          className={`w-full h-full object-cover ${!stream ? 'hidden' : 'block'}`}
+          className={`w-full h-full object-cover ${(isSimulated || !stream) ? 'hidden' : 'block'}`}
         />
         <canvas ref={canvasRef} className="hidden" width={640} height={480} />
         
@@ -302,23 +339,30 @@ export const Analysis: React.FC<AnalysisProps> = ({ onNavigate, profile }) => {
 
               {/* 간단 버전 */}
               <div className="space-y-4">
-                <div className="inline-block px-4 py-1 rounded-full bg-synk-navy text-white text-base font-bold tracking-widest uppercase">간단 버전</div>
+                <div className="inline-block px-4 py-1 rounded-full bg-synk-navy text-white text-base font-bold tracking-widest uppercase">[간단 버전]</div>
                 <p className="text-4xl leading-tight font-black text-synk-navy tracking-tight">
                   {parseResult(result).simple}
                 </p>
               </div>
 
               {/* 상세 버전 */}
-              <div className="space-y-6 pt-6 border-t-2 border-synk-offwhite">
-                <div className="inline-block px-4 py-1 rounded-full bg-synk-blue text-white text-base font-bold tracking-widest uppercase">상세 버전</div>
-                <div className="space-y-8">
+              <div className="space-y-6 pt-10 border-t-4 border-synk-blue/10">
+                <div className="inline-block px-4 py-1 rounded-full bg-synk-blue text-white text-base font-bold tracking-widest uppercase">[상세 버전]</div>
+                <div className="space-y-10">
                   {parseResult(result).detailed.split('\n').filter(line => line.trim()).map((line, idx) => {
-                    const [label, content] = line.startsWith('-') ? line.substring(1).split(':') : [null, line];
+                    // Check if the line is a label line like "- 색상: ..."
+                    const match = line.match(/^[-*]?\s*(.*?):\s*(.*)$/);
+                    if (match) {
+                      const [, label, content] = match;
+                      return (
+                        <div key={idx} className="flex flex-col gap-3">
+                          <span className="text-synk-blue font-black text-3xl tracking-tighter decoration-synk-blue/30">{label.trim()}</span>
+                          <p className="text-2xl leading-relaxed font-bold text-synk-navy/80">{content.trim()}</p>
+                        </div>
+                      );
+                    }
                     return (
-                      <div key={idx} className="flex flex-col gap-2">
-                        {label && <span className="text-synk-blue font-black text-2xl tracking-tighter">{label.trim()}</span>}
-                        <p className="text-2xl leading-relaxed font-medium text-synk-navy/80">{content?.trim() || line}</p>
-                      </div>
+                      <p key={idx} className="text-2xl leading-relaxed font-medium text-synk-navy/80">{line.trim()}</p>
                     );
                   })}
                 </div>

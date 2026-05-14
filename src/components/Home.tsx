@@ -78,50 +78,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             ))}
           </div>
         </section>
-
-        <section className="mb-8">
-          <div className="bg-white rounded-[2rem] p-6 border border-synk-navy/5 shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-synk-offwhite flex items-center justify-center">
-                <Link className="w-6 h-6 text-synk-navy" />
-              </div>
-              <div>
-                <h3 className="font-black text-synk-navy">URL 분석</h3>
-                <p className="text-xs text-synk-grey">쇼핑몰 링크를 분석하고 코디</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-synk-grey" />
-          </div>
-        </section>
       </div>
-
-      {/* Bottom Nav Bar - Reference style */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-xl border-t border-synk-navy/5 p-4 pb-8 flex justify-around items-center rounded-t-[2.5rem] shadow-2xl">
-        <button className="flex flex-col items-center gap-1.5 text-synk-blue">
-          <div className="p-2.5 rounded-2xl bg-synk-blue/10">
-            <Camera className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-tighter">Home</span>
-        </button>
-        <button className="flex flex-col items-center gap-1.5 text-synk-navy/30">
-          <div className="p-2.5">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-tighter">Beauty</span>
-        </button>
-        <button className="flex flex-col items-center gap-1.5 text-synk-navy/30">
-          <div className="p-2.5">
-            <Shirt className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-tighter">Closet</span>
-        </button>
-        <button className="flex flex-col items-center gap-1.5 text-synk-navy/30">
-          <div className="p-2.5">
-            <User className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-tighter">Settings</span>
-        </button>
-      </nav>
     </div>
   );
 };
